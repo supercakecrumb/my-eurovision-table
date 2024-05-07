@@ -1,25 +1,67 @@
 {% extends "base.html" %}
-{% block title %}Welcome to My Eurovision Table{% endblock %}
+{% block title %}Stage - {{ stage.display_name }}{% endblock %}
 {% block body %}
 <div class="container mt-5">
-    <h1>{{ stage.display_name }}</h1>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Country</th>
-                <th>Artist</th>
-                <th>Song</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for country in countries %}
-            <tr>
-                <td>{{ country.display_name }}</td>
-                <td>{{ country.artist }}</td>
-                <td>{{ country.song }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="#voting" data-bs-toggle="tab">Voting</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#rankings" data-bs-toggle="tab">Rankings</a>
+        </li>
+    </ul>
+
+    <div class="tab-content mt-3">
+        <div class="tab-pane active" id="voting">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Country</th>
+                        <th>Artist</th>
+                        <th>Song</th>
+                        <th>Grade (1-12)</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for country in countries %}
+                    <tr>
+                        <form method="POST" action="{{ url_for('submit_grades', stage_id=stage.id, country_id=country.id) }}">
+                            <td>{{ country.display_name }}</td>
+                            <td>{{ country.artist }}</td>
+                            <td>{{ country.song }}</td>
+                            <td>
+                                <input type="number" name="grade" min="1" max="12" value="{{ grades.get(country.id, '') }}" required>
+                            </td>
+                            <td>
+                                <button type="submit" class="btn btn-primary">Vote</button>
+                            </td>
+                        </form>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="tab-pane" id="rankings">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Country</th>
+                        <th>Average Grade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for country, grade in ranking_items %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ country.display_name }}</td>
+                        <td>{{ grade|round(2) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 {% endblock %}
