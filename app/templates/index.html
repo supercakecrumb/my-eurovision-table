@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Welcome to My Eurovision Table{% endblock %}
+{% block body %}
+    {% if not session.user_id %}
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <h1>Login</h1>
+            <form method="POST">
+                {{ form.hidden_tag() }}
+                <div class="mb-3">
+                    {{ form.username(class="form-control", placeholder="Enter your username") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <h2>Welcome, {{ session.username }}!</h2>
+    <p>Choose a stage to view or vote:</p>
+    <ul>
+        {% for stage in stages %}
+        <li><a href="{{ url_for('stage', stage_id=stage.id) }}">{{ stage.display_name }}</a></li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+{% endblock %}
