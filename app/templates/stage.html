@@ -48,7 +48,7 @@
                     <tr>
                         <th>Rank</th>
                         <th>Country</th>
-                        <th>Average Grade</th>
+                        <th>Total Grade</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -56,7 +56,7 @@
                     <tr>
                         <td>{{ loop.index }}</td>
                         <td>{{ country.display_name }}</td>
-                        <td>{{ grade|round(2) }}</td>
+                        <td>{{ grade }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

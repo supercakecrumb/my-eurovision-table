@@ -28,21 +28,26 @@ def configure_routes(app):
     @app.route('/stage/<int:stage_id>')
     def stage(stage_id):
         if 'user_id' not in session:
-            return redirect(url_for('login'))  # Make sure you have a login route
+            return redirect(url_for('login'))
 
         stage = Stage.query.get_or_404(stage_id)
         countries = Country.query.join(Stage.countries).filter(Stage.id == stage_id).all()
         user_id = session['user_id']
 
-        # Fetch grades for each country in this stage for the current user
         grades = {grade.country_id: grade.value for grade in
                   Grade.query.filter_by(user_id=user_id, stage_id=stage_id).all()}
 
-        # If no grades are present, initialize an empty dictionary or a default value
-        if not grades:
-            grades = {country.id: None for country in countries}  # Initialize with None or suitable default
+        # Fetch sum of grades for each country in this stage from all users
+        rankings = db.session.query(
+            Country.id,
+            db.func.sum(Grade.value).label('total_grade')
+        ).join(Grade).filter(Grade.stage_id == stage_id).group_by(Country.id).order_by(
+            db.func.sum(Grade.value).desc()).all()
 
-        return render_template('stage.html', stage=stage, countries=countries, grades=grades)
+        ranking_items = [(Country.query.get(country_id), total_grade) for country_id, total_grade in rankings]
+
+        return render_template('stage.html', stage=stage, countries=countries, grades=grades,
+                               ranking_items=ranking_items)
 
     @app.route('/stage/<int:stage_id>/submit/<int:country_id>', methods=['POST'])
     def submit_grades(stage_id, country_id):

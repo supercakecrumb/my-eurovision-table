@@ -1,24 +1,8 @@
 version: '3.8'
 services:
   web:
-    build: .
+    image: valyankilyan/my-eurovision-table:0.0.1
     ports:
-      - "5001:5000"
+      - "5024:5000"
     volumes:
-      - .:/code
-    environment:
-      - FLASK_ENV=development
-    depends_on:
-      - db
-  db:
-    image: postgres
-    restart: always
-    environment:
-      POSTGRES_DB: eurovision
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data:
+      - ./data:/data  # Ensure this directory exists or adjust as necessary
