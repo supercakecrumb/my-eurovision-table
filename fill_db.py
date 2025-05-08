@@ -1,6 +1,6 @@
 import random
 from app import app, db
-from app.models import Stage, Country, db
+from app.models import Stage, Country
 
 def add_stages():
     stages = ['Semi-final 1', 'Semi-final 2', 'Final']

@@ -28,10 +28,9 @@ def configure_routes(app):
     @app.route('/stage/<int:stage_id>')
     def stage(stage_id):
         if 'user_id' not in session:
-            return redirect(url_for('login'))
+            return redirect(url_for('index'))  # Fixed: redirect to index instead of login
 
         stage = Stage.query.get_or_404(stage_id)
-        countries = Country.query.join(Stage.countries).filter(Stage.id == stage_id).all()
         user_id = session['user_id']
 
         grades = {grade.country_id: grade.value for grade in
@@ -44,19 +43,42 @@ def configure_routes(app):
         ).join(Grade).filter(Grade.stage_id == stage_id).group_by(Country.id).order_by(
             db.func.sum(Grade.value).desc()).all()
 
+        # Create a dictionary of country_id to total_grade for sorting
+        country_scores = {country_id: total_grade for country_id, total_grade in rankings}
+        
+        # Get all countries in this stage
+        countries_in_stage = Country.query.join(Stage.countries).filter(Stage.id == stage_id).all()
+        
+        # Sort countries by their total score (if they have votes)
+        # Countries with no votes will be at the end in their original order
+        sorted_countries = sorted(
+            countries_in_stage,
+            key=lambda country: country_scores.get(country.id, 0),
+            reverse=True
+        )
+
         ranking_items = [(Country.query.get(country_id), total_grade) for country_id, total_grade in rankings]
 
-        return render_template('stage.html', stage=stage, countries=countries, grades=grades,
+        return render_template('stage.html', stage=stage, countries=sorted_countries, grades=grades,
                                ranking_items=ranking_items)
 
     @app.route('/stage/<int:stage_id>/submit/<int:country_id>', methods=['POST'])
     def submit_grades(stage_id, country_id):
         if 'user_id' not in session:
             flash("Please log in to vote", "warning")
-            return redirect(url_for('login'))
+            return redirect(url_for('index'))  # Fixed: redirect to index instead of login
 
         user_id = session['user_id']
-        grade_value = request.form.get('grade')
+        # Convert grade_value to integer
+        try:
+            grade_value = int(request.form.get('grade'))
+            # Validate grade is within allowed range
+            if not 1 <= grade_value <= 12:
+                flash("Grade must be between 1 and 12", "danger")
+                return redirect(url_for('stage', stage_id=stage_id))
+        except (ValueError, TypeError):
+            flash("Invalid grade value", "danger")
+            return redirect(url_for('stage', stage_id=stage_id))
 
         existing_grade = Grade.query.filter_by(user_id=user_id, stage_id=stage_id, country_id=country_id).first()
 
