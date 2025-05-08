@@ -1,10 +1,10 @@
-# My Eurovision Table
+# Private Eurovision Voting Website
 
 A web application for Eurovision Song Contest enthusiasts to vote for their favorite performances and view rankings.
 
 ## Overview
 
-My Eurovision Table is a Flask-based web application that allows users to:
+Private Eurovision Voting Website is a Flask-based web application that allows users to:
 - Log in with a simple username
 - Vote for Eurovision performances across different stages (Semi-finals and Final)
 - View rankings based on all users' votes
@@ -21,16 +21,17 @@ My Eurovision Table is a Flask-based web application that allows users to:
 ## Technical Stack
 
 - **Backend**: Python 3.12 with Flask framework
-- **Database**: SQLAlchemy ORM with SQLite (configurable for other databases)
+- **Database**: PostgreSQL with SQLAlchemy ORM
 - **Frontend**: HTML, Bootstrap 5.1.3
 - **Containerization**: Docker and Docker Compose for easy deployment
 
 ## Project Structure
 
 ```
-my-eurovision-table/
+private-eurovision-voting-website/
 ├── app/                      # Application package
 │   ├── __init__.py           # Flask app initialization
+│   ├── db_init.py            # Database initialization module
 │   ├── forms.py              # WTForms definitions
 │   ├── models.py             # SQLAlchemy database models
 │   ├── routes.py             # Flask routes and view functions
@@ -38,10 +39,12 @@ my-eurovision-table/
 │       ├── base.html         # Base template with common elements
 │       ├── index.html        # Login and stage selection page
 │       └── stage.html        # Voting and rankings page
-├── data/                     # Database storage (created at runtime)
-├── docker-compose.yml        # Docker Compose configuration
+├── data/                     # Local storage directory (for SQLite if used)
+├── .env.example              # Example environment variables configuration
+├── docker-compose.yml        # Docker Compose configuration with PostgreSQL
 ├── Dockerfile                # Docker container definition
 ├── fill_db.py                # Script to populate the database with initial data
+├── README.md                 # Project documentation
 └── requirements.txt          # Python dependencies
 ```
 
@@ -51,8 +54,8 @@ my-eurovision-table/
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/my-eurovision-table.git
-   cd my-eurovision-table
+   git clone https://github.com/supercakecrumb/private-eurovision-voting-website.git
+   cd private-eurovision-voting-website
    ```
 
 2. Create a virtual environment and install dependencies:
@@ -62,66 +65,86 @@ my-eurovision-table/
    pip install -r requirements.txt
    ```
 
-3. Create a data directory for the SQLite database:
+3. Set up a PostgreSQL database or use SQLite for development:
+   
+   **Option 1: Use SQLite (easier for development)**
    ```
-   mkdir data
+   mkdir data  # Create a data directory for the SQLite database
+   ```
+   
+   **Option 2: Use PostgreSQL (recommended for production-like environment)**
+   ```
+   # Install PostgreSQL on your system
+   # Create a database named 'eurovision'
+   # Set the DATABASE_URL environment variable to point to your PostgreSQL database
    ```
 
-4. Run the application:
+4. Create a `.env` file with your configuration:
+   ```
+   # Database connection (use one of these)
+   # For SQLite:
+   DATABASE_URL=sqlite:///data/my-eurovision-table.db
+   # For PostgreSQL:
+   # DATABASE_URL=postgresql://username:password@localhost:5432/eurovision
+   
+   # Auto-initialization
+   AUTO_INIT_DB=1
+   USE_REAL_EUROVISION_DATA=1
+   
+   # Security
+   SECRET_KEY=your_development_secret_key
+   ```
+
+5. Run the application:
    ```
    flask run
    ```
-
-5. Initialize the database with sample data:
+   
+   The application will automatically initialize the database if `AUTO_INIT_DB=1` is set.
+   
+   Alternatively, you can manually initialize the database:
    ```
    python fill_db.py
-   ```
-   
-   For testing with real Eurovision 2023 data:
-   ```
-   # On Linux/Mac
-   USE_REAL_EUROVISION_DATA=1 python fill_db.py
-   
-   # On Windows PowerShell
-   $env:USE_REAL_EUROVISION_DATA=1; python fill_db.py
-   
-   # On Windows Command Prompt
-   set USE_REAL_EUROVISION_DATA=1 && python fill_db.py
-   ```
-   
-   Alternatively, you can set the environment variable `AUTO_INIT_DB=1` to automatically initialize the database when the application starts:
-   ```
-   # On Linux/Mac
-   AUTO_INIT_DB=1 USE_REAL_EUROVISION_DATA=1 flask run
-   
-   # On Windows PowerShell
-   $env:AUTO_INIT_DB=1; $env:USE_REAL_EUROVISION_DATA=1; flask run
-   
-   # On Windows Command Prompt
-   set AUTO_INIT_DB=1 && set USE_REAL_EUROVISION_DATA=1 && flask run
    ```
 
 6. Access the application at http://localhost:5000
 
 ### Docker Deployment
 
-1. (Optional) Edit the `docker-compose.yml` file to configure environment variables:
-   ```yaml
-   environment:
-     # Set to 1 to automatically initialize the database with Eurovision data when the app starts
-     - AUTO_INIT_DB=1
-     # Set to 1 to use real Eurovision 2023 data instead of dummy data
-     - USE_REAL_EUROVISION_DATA=1
+1. Clone the repository:
+   ```
+   git clone https://github.com/supercakecrumb/private-eurovision-voting-website.git
+   cd private-eurovision-voting-website
    ```
 
-2. Build and run using Docker Compose:
+2. (Optional) Create a `.env` file to override environment variables:
+   ```
+   # Database connection
+   DATABASE_URL=postgresql://postgres:postgres@db:5432/eurovision
+   
+   # Auto-initialization
+   AUTO_INIT_DB=1
+   USE_REAL_EUROVISION_DATA=1
+   
+   # Security
+   SECRET_KEY=your_secure_secret_key_here
+   ```
+
+3. Build and run using Docker Compose:
    ```
    docker-compose up -d
    ```
 
-3. Access the application at http://localhost:5024
+4. Access the application at http://localhost:5024
 
-The application will automatically initialize the database with Eurovision data if `AUTO_INIT_DB=1` is set in the environment variables.
+The application will automatically:
+- Set up a PostgreSQL database
+- Initialize the database with Eurovision data (if `AUTO_INIT_DB=1` is set)
+- Use real Eurovision 2023 data (if `USE_REAL_EUROVISION_DATA=1` is set)
+
+#### Database Persistence
+
+PostgreSQL data is stored in a Docker volume (`postgres_data`), ensuring your data persists across container restarts.
 
 ## Usage
 

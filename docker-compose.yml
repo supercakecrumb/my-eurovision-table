@@ -1,17 +1,40 @@
 version: '3.8'
 services:
   web:
-    image: valyankilyan/my-eurovision-table:0.0.1
+    image: supercakecrumb/private-eurovision-voting-website:latest
     ports:
       - "5024:5000"
     volumes:
-      - ./data:/data  # Ensure this directory exists or adjust as necessary
+      - ./data:/data  # For any file storage needs
+    depends_on:
+      - db
     environment:
+      # Database connection
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/eurovision
       # Set to 1 to automatically initialize the database with Eurovision data when the app starts
       - AUTO_INIT_DB=1
       # Set to 1 to use real Eurovision 2023 data instead of dummy data
       - USE_REAL_EUROVISION_DATA=1
       # Optional: Set a custom secret key for session security
-      # - SECRET_KEY=your-secure-secret-key
-      # Optional: Set a custom database URL if not using the default SQLite
-      # - DATABASE_URL=postgresql://user:password@db:5432/eurovision
+      - SECRET_KEY=${SECRET_KEY:-default_dev_key_change_in_production}
+    restart: unless-stopped
+
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=eurovision
+    ports:
+      - "5432:5432"  # Expose PostgreSQL port (optional, for external connections)
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:  # Persistent volume for database data
