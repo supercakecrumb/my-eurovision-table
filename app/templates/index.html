@@ -1,14 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Welcome to My Eurovision Table{% endblock %}
+{% block title %}Welcome to Euromouse{% endblock %}
 {% block body %}
     <div class="row justify-content-center">
         <div class="col-md-8 text-center mb-5">
             <h1 class="display-4 fw-bold" style="color: var(--eurovision-blue);">
                 <i class="fas fa-star text-warning"></i>
-                My Eurovision Table
+                Euromouse
                 <i class="fas fa-star text-warning"></i>
             </h1>
-            <p class="lead">Vote for your favorite performances and see the rankings!</p>
         </div>
     </div>
 
@@ -51,7 +50,6 @@
                             <div class="card h-100">
                                 <div class="card-body text-center">
                                     <h5 class="card-title">{{ stage.display_name }}</h5>
-                                    <p class="card-text">Vote for your favorite performances</p>
                                     <a href="{{ url_for('stage', stage_id=stage.id) }}" class="btn btn-eurovision">
                                         <i class="fas fa-vote-yea me-2"></i>Vote Now
                                     </a>
