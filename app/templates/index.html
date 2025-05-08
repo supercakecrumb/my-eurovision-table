@@ -47,14 +47,13 @@
                     <div class="row row-cols-1 row-cols-md-3 g-4">
                         {% for stage in stages %}
                         <div class="col">
-                            <div class="card h-100">
-                                <div class="card-body text-center">
-                                    <h5 class="card-title">{{ stage.display_name }}</h5>
-                                    <a href="{{ url_for('stage', stage_id=stage.id) }}" class="btn btn-eurovision">
-                                        <i class="fas fa-vote-yea me-2"></i>Vote Now
-                                    </a>
+                            <a href="{{ url_for('stage', stage_id=stage.id) }}" style="text-decoration: none; color: inherit;">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <h5 class="card-title">{{ stage.display_name }}</h5>
+                                    </div>
                                 </div>
-                            </div>
+                            </a>
                         </div>
                         {% endfor %}
                     </div>
