@@ -95,9 +95,9 @@ my-eurovision-table/
 3. Vote for each country's performance by assigning points (1-12)
 4. View the current rankings in the Rankings tab
 
-## Recent Fixes
+## Recent Improvements
 
-The following issues have been fixed in the latest update:
+### Bug Fixes
 
 1. **Contestant Ordering**: Countries are now sorted by their total score in both the voting and rankings tabs.
 2. **Routing Fix**: Corrected redirects to non-existent 'login' route to properly redirect to 'index'.
@@ -105,6 +105,16 @@ The following issues have been fixed in the latest update:
 4. **Security Enhancement**: Replaced hardcoded secret key with environment variable and secure random fallback.
 5. **Flash Messages**: Added flash message display to the base template for better user feedback.
 6. **Code Cleanup**: Fixed duplicate import in fill_db.py.
+
+### UI Enhancements
+
+1. **Modern Design**: Implemented a modern, Eurovision-themed design with custom colors and styling.
+2. **Responsive Layout**: Improved responsive layout for better mobile experience.
+3. **Visual Hierarchy**: Enhanced visual hierarchy with cards, shadows, and spacing.
+4. **Interactive Elements**: Added hover effects and transitions for a more interactive feel.
+5. **Icons**: Integrated Font Awesome icons throughout the interface for visual cues.
+6. **Rankings Visualization**: Added special styling for top 3 ranked countries with crown, award, and medal icons.
+7. **Improved Navigation**: Enhanced navigation with back buttons and clearer tab interfaces.
 
 ## Remaining Limitations
 

@@ -1,28 +1,68 @@
 {% extends "base.html" %}
 {% block title %}Welcome to My Eurovision Table{% endblock %}
 {% block body %}
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center mb-5">
+            <h1 class="display-4 fw-bold" style="color: var(--eurovision-blue);">
+                <i class="fas fa-star text-warning"></i>
+                My Eurovision Table
+                <i class="fas fa-star text-warning"></i>
+            </h1>
+            <p class="lead">Vote for your favorite performances and see the rankings!</p>
+        </div>
+    </div>
+
     {% if not session.user_id %}
-    <div class="row">
-        <div class="col-md-6 offset-md-3">
-            <h1>Login</h1>
-            <form method="POST">
-                {{ form.hidden_tag() }}
-                <div class="mb-3">
-                    {{ form.username(class="form-control", placeholder="Enter your username") }}
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h3><i class="fas fa-user-circle me-2"></i>Login</h3>
                 </div>
-                <div class="mb-3">
-                    {{ form.submit(class="btn btn-primary") }}
+                <div class="card-body p-4">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        <div class="mb-4">
+                            <label for="{{ form.username.id }}" class="form-label fw-bold">Username</label>
+                            {{ form.username(class="form-control form-control-lg", placeholder="Enter your username") }}
+                            <div class="form-text">Enter any username to start voting!</div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-eurovision btn-lg") }}
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
     {% else %}
-    <h2>Welcome, {{ session.username }}!</h2>
-    <p>Choose a stage to view or vote:</p>
-    <ul>
-        {% for stage in stages %}
-        <li><a href="{{ url_for('stage', stage_id=stage.id) }}">{{ stage.display_name }}</a></li>
-        {% endfor %}
-    </ul>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h3><i class="fas fa-trophy me-2"></i>Eurovision Stages</h3>
+                </div>
+                <div class="card-body p-4">
+                    <p class="lead text-center mb-4">Choose a stage to view or vote:</p>
+                    
+                    <div class="row row-cols-1 row-cols-md-3 g-4">
+                        {% for stage in stages %}
+                        <div class="col">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">{{ stage.display_name }}</h5>
+                                    <p class="card-text">Vote for your favorite performances</p>
+                                    <a href="{{ url_for('stage', stage_id=stage.id) }}" class="btn btn-eurovision">
+                                        <i class="fas fa-vote-yea me-2"></i>Vote Now
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     {% endif %}
 {% endblock %}

@@ -1,66 +1,113 @@
 {% extends "base.html" %}
 {% block title %}Stage - {{ stage.display_name }}{% endblock %}
 {% block body %}
-<div class="container mt-5">
-    <ul class="nav nav-tabs">
-        <li class="nav-item">
-            <a class="nav-link active" aria-current="page" href="#voting" data-bs-toggle="tab">Voting</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#rankings" data-bs-toggle="tab">Rankings</a>
-        </li>
-    </ul>
-
-    <div class="tab-content mt-3">
-        <div class="tab-pane active" id="voting">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Country</th>
-                        <th>Artist</th>
-                        <th>Song</th>
-                        <th>Grade (1-12)</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for country in countries %}
-                    <tr>
-                        <form method="POST" action="{{ url_for('submit_grades', stage_id=stage.id, country_id=country.id) }}">
-                            <td>{{ country.display_name }}</td>
-                            <td>{{ country.artist }}</td>
-                            <td>{{ country.song }}</td>
-                            <td>
-                                <input type="number" name="grade" min="1" max="12" value="{{ grades.get(country.id, '') }}" required>
-                            </td>
-                            <td>
-                                <button type="submit" class="btn btn-primary">Vote</button>
-                            </td>
-                        </form>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="mb-0" style="color: var(--eurovision-blue);">
+                <i class="fas fa-microphone-alt me-2"></i>{{ stage.display_name }}
+            </h1>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Stages
+            </a>
         </div>
-        <div class="tab-pane" id="rankings">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Country</th>
-                        <th>Total Grade</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for country, grade in ranking_items %}
-                    <tr>
-                        <td>{{ loop.index }}</td>
-                        <td>{{ country.display_name }}</td>
-                        <td>{{ grade }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <hr>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs" id="eurovisionTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="voting-tab" data-bs-toggle="tab" data-bs-target="#voting" type="button" role="tab" aria-controls="voting" aria-selected="true">
+                    <i class="fas fa-vote-yea me-2"></i>Voting
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="rankings-tab" data-bs-toggle="tab" data-bs-target="#rankings" type="button" role="tab" aria-controls="rankings" aria-selected="false">
+                    <i class="fas fa-trophy me-2"></i>Rankings
+                </button>
+            </li>
+        </ul>
+    </div>
+    <div class="card-body">
+        <div class="tab-content" id="eurovisionTabsContent">
+            <div class="tab-pane fade show active" id="voting" role="tabpanel" aria-labelledby="voting-tab">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped align-middle">
+                        <thead>
+                            <tr class="text-center">
+                                <th>Country</th>
+                                <th>Artist</th>
+                                <th>Song</th>
+                                <th style="width: 150px;">Grade (1-12)</th>
+                                <th style="width: 120px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for country in countries %}
+                            <tr>
+                                <form method="POST" action="{{ url_for('submit_grades', stage_id=stage.id, country_id=country.id) }}">
+                                    <td class="fw-bold">
+                                        <div class="d-flex align-items-center">
+                                            <span class="me-2">{{ country.display_name }}</span>
+                                        </div>
+                                    </td>
+                                    <td>{{ country.artist }}</td>
+                                    <td>{{ country.song }}</td>
+                                    <td>
+                                        <div class="input-group">
+                                            <input type="number" name="grade" min="1" max="12" value="{{ grades.get(country.id, '') }}"
+                                                class="form-control text-center" required>
+                                            <span class="input-group-text">points</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="submit" class="btn btn-eurovision">
+                                            <i class="fas fa-check me-1"></i> Vote
+                                        </button>
+                                    </td>
+                                </form>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="rankings" role="tabpanel" aria-labelledby="rankings-tab">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped align-middle">
+                        <thead>
+                            <tr class="text-center">
+                                <th style="width: 80px;">Rank</th>
+                                <th>Country</th>
+                                <th style="width: 150px;">Total Points</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for country, grade in ranking_items %}
+                            <tr class="{% if loop.index == 1 %}table-warning{% elif loop.index == 2 %}table-light{% elif loop.index == 3 %}table-secondary{% endif %}">
+                                <td class="text-center fw-bold">
+                                    {% if loop.index == 1 %}
+                                        <i class="fas fa-crown text-warning fa-lg"></i> {{ loop.index }}
+                                    {% elif loop.index == 2 %}
+                                        <i class="fas fa-award text-secondary fa-lg"></i> {{ loop.index }}
+                                    {% elif loop.index == 3 %}
+                                        <i class="fas fa-medal text-danger fa-lg"></i> {{ loop.index }}
+                                    {% else %}
+                                        {{ loop.index }}
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold">{{ country.display_name }}</td>
+                                <td class="text-center">
+                                    <span class="badge bg-primary rounded-pill px-3 py-2">{{ grade }} points</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>
