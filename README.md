@@ -76,17 +76,52 @@ my-eurovision-table/
    ```
    python fill_db.py
    ```
+   
+   For testing with real Eurovision 2023 data:
+   ```
+   # On Linux/Mac
+   USE_REAL_EUROVISION_DATA=1 python fill_db.py
+   
+   # On Windows PowerShell
+   $env:USE_REAL_EUROVISION_DATA=1; python fill_db.py
+   
+   # On Windows Command Prompt
+   set USE_REAL_EUROVISION_DATA=1 && python fill_db.py
+   ```
+   
+   Alternatively, you can set the environment variable `AUTO_INIT_DB=1` to automatically initialize the database when the application starts:
+   ```
+   # On Linux/Mac
+   AUTO_INIT_DB=1 USE_REAL_EUROVISION_DATA=1 flask run
+   
+   # On Windows PowerShell
+   $env:AUTO_INIT_DB=1; $env:USE_REAL_EUROVISION_DATA=1; flask run
+   
+   # On Windows Command Prompt
+   set AUTO_INIT_DB=1 && set USE_REAL_EUROVISION_DATA=1 && flask run
+   ```
 
 6. Access the application at http://localhost:5000
 
 ### Docker Deployment
 
-1. Build and run using Docker Compose:
+1. (Optional) Edit the `docker-compose.yml` file to configure environment variables:
+   ```yaml
+   environment:
+     # Set to 1 to automatically initialize the database with Eurovision data when the app starts
+     - AUTO_INIT_DB=1
+     # Set to 1 to use real Eurovision 2023 data instead of dummy data
+     - USE_REAL_EUROVISION_DATA=1
+   ```
+
+2. Build and run using Docker Compose:
    ```
    docker-compose up -d
    ```
 
-2. Access the application at http://localhost:5024
+3. Access the application at http://localhost:5024
+
+The application will automatically initialize the database with Eurovision data if `AUTO_INIT_DB=1` is set in the environment variables.
 
 ## Usage
 
@@ -115,6 +150,14 @@ my-eurovision-table/
 5. **Icons**: Integrated Font Awesome icons throughout the interface for visual cues.
 6. **Rankings Visualization**: Added special styling for top 3 ranked countries with crown, award, and medal icons.
 7. **Improved Navigation**: Enhanced navigation with back buttons and clearer tab interfaces.
+
+### Data Enhancements
+
+1. **Real Eurovision Data**: Added support for real Eurovision 2023 data through an environment variable (`USE_REAL_EUROVISION_DATA=1`).
+2. **Auto-Initialization**: Added automatic database initialization with the `AUTO_INIT_DB=1` environment variable.
+3. **Docker Integration**: Integrated environment variables in docker-compose.yml for easy deployment with real data.
+4. **Testing Mode**: Implemented a testing mode with comprehensive data from previous Eurovision contests.
+5. **Improved Feedback**: Enhanced console output during database initialization for better visibility.
 
 ## Remaining Limitations
 

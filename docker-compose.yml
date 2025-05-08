@@ -6,3 +6,12 @@ services:
       - "5024:5000"
     volumes:
       - ./data:/data  # Ensure this directory exists or adjust as necessary
+    environment:
+      # Set to 1 to automatically initialize the database with Eurovision data when the app starts
+      - AUTO_INIT_DB=1
+      # Set to 1 to use real Eurovision 2023 data instead of dummy data
+      - USE_REAL_EUROVISION_DATA=1
+      # Optional: Set a custom secret key for session security
+      # - SECRET_KEY=your-secure-secret-key
+      # Optional: Set a custom database URL if not using the default SQLite
+      # - DATABASE_URL=postgresql://user:password@db:5432/eurovision

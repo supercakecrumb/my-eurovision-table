@@ -1,39 +1,20 @@
-import random
-from app import app, db
-from app.models import Stage, Country
+"""
+Database initialization script for Eurovision Table application.
+This script can be run directly to populate the database with Eurovision data.
 
-def add_stages():
-    stages = ['Semi-final 1', 'Semi-final 2', 'Final']
-    for stage_name in stages:
-        if not Stage.query.filter_by(display_name=stage_name).first():
-            stage = Stage(display_name=stage_name)
-            db.session.add(stage)
-    db.session.commit()
-
-def add_countries():
-    countries = [
-        'Sweden', 'Norway', 'Denmark', 'Finland', 'Iceland',
-        'Italy', 'Spain', 'Germany', 'France', 'Netherlands'
-    ]
-    for country_name in countries:
-        if not Country.query.filter_by(display_name=country_name).first():
-            country = Country(display_name=country_name, artist='Artist ' + country_name, song='Song ' + country_name)
-            db.session.add(country)
-    db.session.commit()
-
-def assign_countries_to_stages():
-    stages = Stage.query.all()
-    countries = Country.query.all()
-    for country in countries:
-        # Assign each country to 1 or 2 stages randomly
-        assigned_stages = random.sample(stages, k=random.randint(1, 2))
-        for stage in assigned_stages:
-            if country not in stage.countries:
-                stage.countries.append(country)
-    db.session.commit()
+Environment variables:
+- USE_REAL_EUROVISION_DATA: Set to '1' to use real Eurovision 2023 data
+"""
+from app import app
+from app.db_init import initialize_database
 
 if __name__ == '__main__':
+    print("\n🎵 Eurovision Table Database Setup Script 🎵")
+    print("===========================================")
+    print("This script will initialize the database with Eurovision data.")
+    print("You can also set AUTO_INIT_DB=1 in your environment to auto-initialize when the app starts.")
+    
     with app.app_context():
-        add_stages()
-        add_countries()
-        assign_countries_to_stages()
+        initialize_database()
+        
+    print("\nYou can now run the application and start voting!")
