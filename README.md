@@ -16,7 +16,7 @@ Private Eurovision Voting Website is a Flask-based web application that allows u
 - **Multiple Stages**: Support for Semi-final 1, Semi-final 2, and Final stages
 - **Voting System**: Grade performances from 1-12 points (Eurovision style)
 - **Real-time Rankings**: View current standings based on all votes
-- **Responsive Design**: Bootstrap-based UI that works on various devices
+- **Responsive Design**: Mobile-optimized UI that works seamlessly on all devices
 - **CSV Data Import**: Paste CSV data to populate the database with Eurovision contestants
 
 ## Technical Stack
@@ -227,7 +227,7 @@ You can copy a sample CSV format from the Fill Database page with a single click
 ### UI Enhancements
 
 1. **Modern Design**: Implemented a modern, Eurovision-themed design with custom colors and styling.
-2. **Responsive Layout**: Improved responsive layout for better mobile experience.
+2. **Responsive Layout**: Fully optimized mobile experience with no horizontal scrolling.
 3. **Visual Hierarchy**: Enhanced visual hierarchy with cards, shadows, and spacing.
 4. **Interactive Elements**: Added hover effects and transitions for a more interactive feel.
 5. **Icons**: Integrated Font Awesome icons throughout the interface for visual cues.
@@ -243,6 +243,7 @@ You can copy a sample CSV format from the Fill Database page with a single click
 5. **Improved Feedback**: Enhanced console output during database initialization for better visibility.
 6. **GitHub Actions**: Added automated Docker image building and publishing to GitHub Container Registry.
 7. **CSV Import**: Added a user-friendly interface for importing Eurovision contestant data by pasting CSV content.
+8. **Mobile Optimization**: Enhanced mobile experience with optimized tables, compact buttons, and responsive text sizing.
 
 ## Remaining Limitations
 

@@ -50,3 +50,57 @@ input[type="file"] {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+    /* Smaller font sizes on mobile */
+    body {
+        font-size: 0.9rem;
+    }
+    
+    h1 {
+        font-size: 1.8rem;
+    }
+    
+    h3 {
+        font-size: 1.3rem;
+    }
+    
+    /* Compact buttons on mobile */
+    .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        white-space: nowrap;
+    }
+    
+    /* Smaller flag emojis on mobile */
+    .fs-4 {
+        font-size: 1.1rem !important;
+    }
+    
+    /* Optimize table for mobile */
+    .table th, .table td {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.85rem;
+    }
+    
+    /* Ensure inputs are not too large */
+    .form-control {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Make sure navbar buttons fit on one line */
+    .navbar .btn {
+        margin-right: 0.25rem !important;
+        padding: 0.25rem 0.4rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Hide button text on very small screens, show only icons */
+    @media (max-width: 576px) {
+        .navbar .btn-text {
+            display: none;
+        }
+    }
+}

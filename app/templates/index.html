@@ -3,7 +3,7 @@
 {% block body %}
     <div class="row justify-content-center">
         <div class="col-md-8 text-center mb-5">
-            <h1 class="display-4 fw-bold" style="color: var(--eurovision-blue);">
+            <h1 class="fw-bold" style="color: var(--eurovision-blue);">
                 <i class="fas fa-star text-warning"></i>
                 Euromouse
                 <i class="fas fa-star text-warning"></i>
@@ -80,6 +80,44 @@
     .dark-theme .stage-link:hover .stage-card {
         background-color: rgba(187, 134, 252, 0.2);
         border-color: var(--eurovision-pink);
+    }
+    
+    /* Mobile optimizations */
+    @media (max-width: 768px) {
+        /* Smaller headings */
+        h1 {
+            font-size: 2rem;
+        }
+        
+        /* Adjust card padding */
+        .card-body {
+            padding: 0.75rem;
+        }
+        
+        /* Make login form more compact */
+        .form-control-lg {
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+        }
+        
+        /* Adjust stage cards */
+        .card-title {
+            font-size: 1rem;
+            margin-bottom: 0;
+        }
+        
+        .row-cols-md-3 > * {
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+    }
+    
+    /* Very small screens */
+    @media (max-width: 576px) {
+        .row-cols-md-3 > * {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
     }
 </style>
 

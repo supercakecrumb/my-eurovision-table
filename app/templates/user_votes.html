@@ -29,25 +29,25 @@
             <table class="table align-middle" id="user-votes-table">
                 <thead>
                     <tr class="text-center">
-                        <th style="width: 180px;">Country</th>
-                        <th>Artist</th>
-                        <th>Song</th>
-                        <th style="width: 120px;">Points</th>
+                        <th class="country-col" style="width: 120px;">Country</th>
+                        <th class="artist-col">Artist</th>
+                        <th class="song-col">Song</th>
+                        <th class="points-col" style="width: 80px;">Points</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for country, grade in user_grades %}
                     <tr>
-                        <td class="fw-bold">
+                        <td class="fw-bold country-col">
                             <div class="d-flex align-items-center">
-                                <span class="me-2 fs-4">{{ country_flags.get(country.display_name, "🇪🇺") }}</span>
-                                <span>{{ country.display_name }}</span>
+                                <span class="me-1 fs-4">{{ country_flags.get(country.display_name, "🇪🇺") }}</span>
+                                <span class="country-name">{{ country.display_name }}</span>
                             </div>
                         </td>
-                        <td>{{ country.artist }}</td>
-                        <td>{{ country.song }}</td>
-                        <td class="text-center">
-                            <span class="badge bg-primary rounded-pill px-3 py-2">{{ grade }} points</span>
+                        <td class="artist-col">{{ country.artist }}</td>
+                        <td class="song-col">{{ country.song }}</td>
+                        <td class="text-center points-col">
+                            <span class="badge bg-primary rounded-pill">{{ grade }}</span>
                         </td>
                     </tr>
                     {% endfor %}
@@ -58,6 +58,50 @@
 </div>
 
 <style>
+    /* Mobile optimizations */
+    @media (max-width: 768px) {
+        /* Optimize table columns for mobile */
+        .country-col {
+            width: 80px !important;
+        }
+        
+        .country-name {
+            max-width: 80px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: inline-block;
+        }
+        
+        .flag-col {
+            width: 40px !important;
+        }
+        
+        .artist-col, .song-col {
+            max-width: 80px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .points-col {
+            width: 60px !important;
+        }
+        
+        /* Smaller badges */
+        .badge {
+            padding: 0.25rem 0.5rem !important;
+            font-size: 0.75rem !important;
+        }
+        
+        /* Adjust back buttons */
+        .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+    }
+    
     /* Table styling for both light and dark themes */
     #user-votes-table {
         border-radius: 8px;
