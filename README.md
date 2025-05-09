@@ -147,7 +147,7 @@ private-eurovision-voting-website/
    
    services:
      web:
-       image: ghcr.io/supercakecrumb/private-eurovision-voting-website:latest
+       image: ghcr.io/supercakecrumb/private-eurovision-voting-website:latest  # Use :latest or a specific version like :1.0.0
        ports:
          - "5024:5000"
        environment:
@@ -250,7 +250,7 @@ This project uses GitHub Actions for continuous integration and delivery:
 
 1. **Automated Docker Builds**: Every push to the main branch triggers a build of the Docker image
 2. **Container Registry**: Images are automatically pushed to GitHub Container Registry (ghcr.io)
-3. **Versioned Tags**: Images are tagged with branch name, commit SHA, and 'latest' for the default branch
+3. **Versioned Tags**: Images are tagged with semantic version from Git tags and 'latest' for the default branch
 
 To use the GitHub Actions workflow:
 
