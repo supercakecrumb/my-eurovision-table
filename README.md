@@ -147,7 +147,7 @@ private-eurovision-voting-website/
    
    services:
      web:
-       image: ghcr.io/supercakecrumb/private-eurovision-voting-website:latest  # Use :latest or a specific version like :1.0.0
+       image: ghcr.io/supercakecrumb/private-eurovision-voting-website:1.0.0  # Use a specific version tag
        ports:
          - "5024:5000"
        environment:
@@ -248,14 +248,19 @@ PostgreSQL data is stored in a Docker volume (`postgres_data`), ensuring your da
 
 This project uses GitHub Actions for continuous integration and delivery:
 
-1. **Automated Docker Builds**: Every push to the main branch triggers a build of the Docker image
+1. **Automated Docker Builds**: Every new Git tag (v*.*.* format) triggers a build of the Docker image
 2. **Container Registry**: Images are automatically pushed to GitHub Container Registry (ghcr.io)
-3. **Versioned Tags**: Images are tagged with semantic version from Git tags and 'latest' for the default branch
+3. **Versioned Tags**: Images are tagged with semantic version from Git tags
+4. **GitHub Releases**: Automatically creates a GitHub release for each new tag
 
 To use the GitHub Actions workflow:
 
 1. Fork or clone this repository
-2. Go to your repository settings → Secrets and variables → Actions
-3. No secrets needed as GITHUB_TOKEN is automatically provided by GitHub
+2. Create and push a new tag to trigger the workflow:
+   ```
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+3. The workflow will automatically build the Docker image, push it to ghcr.io, and create a GitHub release
 
 The workflow file is located at `.github/workflows/docker-build.yml`
