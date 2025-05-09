@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}Fill Database{% endblock %}
+{% block body %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="mb-0" style="color: var(--eurovision-blue);">
+                <i class="fas fa-database me-2"></i>Fill Database
+            </h1>
+            <a href="{{ url_for('index') }}" class="btn text-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Home
+            </a>
+        </div>
+        <hr>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h3 class="mb-0"><i class="fas fa-info-circle me-2"></i>Instructions</h3>
+            </div>
+            <div class="card-body">
+                <p>Paste CSV data to fill the database with Eurovision contestants.</p>
+                <p>The CSV data should have the following format:</p>
+                <pre class="bg-light p-3 rounded">
+country,artist,song
+Sweden,Loreen,Tattoo
+Finland,Käärijä,Cha Cha Cha
+Israel,Noa Kirel,Unicorn
+...</pre>
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb me-2"></i> Make sure your CSV data has the correct headers and format.
+                </div>
+                <div class="mt-3">
+                    <button id="copy-sample-btn" class="btn btn-outline-primary">
+                        <i class="fas fa-copy me-2"></i>Copy Sample CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h3 class="mb-0"><i class="fas fa-paste me-2"></i>Paste CSV Data</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="stage" class="form-label fw-bold">Select Stage</label>
+                        <select name="stage" id="stage" class="form-select" required>
+                            <option value="" selected disabled>Choose a stage...</option>
+                            <option value="semi1">Semi-Final 1</option>
+                            <option value="semi2">Semi-Final 2</option>
+                            <option value="final">Final</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="csv_data" class="form-label fw-bold">CSV Data</label>
+                        <textarea name="csv_data" id="csv_data" class="form-control" rows="10" required placeholder="country,artist,song&#10;Sweden,Loreen,Tattoo&#10;Finland,Käärijä,Cha Cha Cha&#10;..."></textarea>
+                        <div class="form-text">Paste CSV data with country, artist, and song information.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="clear_existing" id="clear_existing">
+                            <label class="form-check-label" for="clear_existing">
+                                Clear existing data for this stage
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-eurovision">
+                            <i class="fas fa-check me-2"></i>Process CSV Data
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if preview_data %}
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0"><i class="fas fa-table me-2"></i>Preview Data</h3>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table align-middle" id="preview-table">
+                        <thead>
+                            <tr>
+                                <th>Country</th>
+                                <th>Flag</th>
+                                <th>Artist</th>
+                                <th>Song</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in preview_data %}
+                            <tr>
+                                <td>{{ row.country }}</td>
+                                <td><span class="fs-4">{{ country_flags.get(row.country, "🇪🇺") }}</span></td>
+                                <td>{{ row.artist }}</td>
+                                <td>{{ row.song }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <form method="POST" action="{{ url_for('confirm_fill_db') }}">
+                    <input type="hidden" name="stage" value="{{ selected_stage }}">
+                    <input type="hidden" name="clear_existing" value="{{ clear_existing }}">
+                    <input type="hidden" name="csv_data" value="{{ csv_data_json }}">
+                    
+                    <div class="d-grid mt-3">
+                        <button type="submit" class="btn btn-eurovision">
+                            <i class="fas fa-check me-2"></i>Confirm and Save to Database
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+    #preview-table {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    /* Light theme table styling */
+    #preview-table {
+        background-color: var(--eurovision-light);
+        color: var(--eurovision-blue);
+    }
+    
+    #preview-table thead {
+        background-color: var(--eurovision-blue);
+        color: white;
+    }
+    
+    /* Dark theme table styling */
+    .dark-theme #preview-table {
+        background-color: #2d2d2d;
+        color: #e0e0e0;
+    }
+    
+    .dark-theme #preview-table thead {
+        background-color: #3d3d3d;
+        color: white;
+    }
+    
+    /* Row hover effect */
+    #preview-table tbody tr:hover {
+        background-color: rgba(233, 30, 99, 0.1);
+    }
+</style>
+
+<script>
+    // Sample CSV data
+    const sampleCsvData = `country,artist,song
+Sweden,Loreen,Tattoo
+Finland,Käärijä,Cha Cha Cha
+Israel,Noa Kirel,Unicorn
+Italy,Marco Mengoni,Due Vite
+France,La Zarra,Évidemment
+Spain,Blanca Paloma,Eaea
+Ukraine,TVORCHI,Heart of Steel
+United Kingdom,Mae Muller,I Wrote A Song
+Norway,Alessandra,Queen of Kings
+Germany,Lord of the Lost,Blood & Glitter`;
+
+    // Copy sample CSV data to clipboard
+    document.addEventListener('DOMContentLoaded', function() {
+        const copyButton = document.getElementById('copy-sample-btn');
+        const csvTextarea = document.getElementById('csv_data');
+        
+        if (copyButton) {
+            copyButton.addEventListener('click', function() {
+                // Copy to clipboard
+                navigator.clipboard.writeText(sampleCsvData)
+                    .then(() => {
+                        // Show success message
+                        copyButton.innerHTML = '<i class="fas fa-check me-2"></i>Copied!';
+                        copyButton.classList.remove('btn-outline-primary');
+                        copyButton.classList.add('btn-success');
+                        
+                        // Reset button after 2 seconds
+                        setTimeout(() => {
+                            copyButton.innerHTML = '<i class="fas fa-copy me-2"></i>Copy Sample CSV';
+                            copyButton.classList.remove('btn-success');
+                            copyButton.classList.add('btn-outline-primary');
+                        }, 2000);
+                        
+                        // Also fill the textarea
+                        if (csvTextarea) {
+                            csvTextarea.value = sampleCsvData;
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy text: ', err);
+                    });
+            });
+        }
+    });
+</script>
+{% endblock %}

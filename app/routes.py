@@ -1,7 +1,9 @@
-from flask import render_template, request, redirect, session, url_for, flash, jsonify
+from flask import render_template, request, redirect, session, url_for, flash, jsonify, json
 from .models import db, User, Stage, Country, Grade
 from .forms import LoginForm, GradeForm
 from .country_flags import country_flags, get_flag_emoji
+import csv
+import io
 
 def configure_routes(app):
     # Register all routes with the app
@@ -95,6 +97,159 @@ def configure_routes(app):
                               user_votes=user_votes,
                               user_favorites=user_favorites,
                               country_flags=country_flags)
+                              
+    @app.route('/fill-db', methods=['GET', 'POST'])
+    def fill_db():
+        # Check if user is admin (for simplicity, we'll just check if they're logged in)
+        if 'user_id' not in session:
+            flash("You need to be logged in to access this page", "warning")
+            return redirect(url_for('index'))
+            
+        # Initialize variables for template
+        preview_data = None
+        selected_stage = None
+        clear_existing = False
+        csv_data_json = None
+        
+        if request.method == 'POST':
+            # Get form data
+            stage_id = request.form.get('stage')
+            clear_existing = 'clear_existing' in request.form
+            
+            # Map stage_id to actual stage names
+            stage_map = {
+                'semi1': 'Semi-final 1',
+                'semi2': 'Semi-final 2',
+                'final': 'Final'
+            }
+            
+            selected_stage = stage_id
+            stage_name = stage_map.get(stage_id)
+            
+            if not stage_name:
+                flash("Invalid stage selected", "danger")
+                return redirect(url_for('fill_db'))
+                
+            # Get CSV data from textarea
+            csv_data_text = request.form.get('csv_data')
+            
+            if not csv_data_text or csv_data_text.strip() == '':
+                flash("No CSV data provided", "danger")
+                return redirect(url_for('fill_db'))
+                
+            # Read and validate CSV
+            try:
+                # Read CSV data from textarea
+                stream = io.StringIO(csv_data_text, newline=None)
+                csv_data = list(csv.DictReader(stream))
+                
+                # Validate CSV structure
+                required_fields = ['country', 'artist', 'song']
+                for field in required_fields:
+                    if not all(field in row for row in csv_data):
+                        flash(f"CSV is missing required field: {field}", "danger")
+                        return redirect(url_for('fill_db'))
+                
+                # Prepare preview data
+                preview_data = csv_data
+                csv_data_json = json.dumps(csv_data)
+                
+                flash(f"CSV file validated successfully. {len(csv_data)} entries found.", "success")
+                
+            except Exception as e:
+                flash(f"Error processing CSV file: {str(e)}", "danger")
+                return redirect(url_for('fill_db'))
+        
+        return render_template('fill_db.html',
+                              preview_data=preview_data,
+                              selected_stage=selected_stage,
+                              clear_existing=clear_existing,
+                              csv_data_json=csv_data_json,
+                              country_flags=country_flags)
+    
+    @app.route('/confirm-fill-db', methods=['POST'])
+    def confirm_fill_db():
+        if 'user_id' not in session:
+            flash("You need to be logged in to access this page", "warning")
+            return redirect(url_for('index'))
+            
+        # Get form data
+        stage_id = request.form.get('stage')
+        clear_existing = request.form.get('clear_existing') == 'True'
+        csv_data_json = request.form.get('csv_data')
+        
+        if not csv_data_json:
+            flash("No data provided", "danger")
+            return redirect(url_for('fill_db'))
+            
+        try:
+            # Parse JSON data
+            csv_data = json.loads(csv_data_json)
+            
+            # Map stage_id to actual stage names
+            stage_map = {
+                'semi1': 'Semi-final 1',
+                'semi2': 'Semi-final 2',
+                'final': 'Final'
+            }
+            
+            stage_name = stage_map.get(stage_id)
+            
+            if not stage_name:
+                flash("Invalid stage selected", "danger")
+                return redirect(url_for('fill_db'))
+                
+            # Get or create stage
+            stage = Stage.query.filter_by(display_name=stage_name).first()
+            if not stage:
+                stage = Stage(display_name=stage_name)
+                db.session.add(stage)
+                db.session.commit()
+                
+            # Clear existing countries if requested
+            if clear_existing:
+                # Get all countries in this stage
+                countries = Country.query.join(Stage.countries).filter(Stage.id == stage.id).all()
+                
+                # Remove countries from stage
+                for country in countries:
+                    stage.countries.remove(country)
+                    
+                db.session.commit()
+                flash(f"Cleared existing countries from {stage_name}", "info")
+            
+            # Add countries from CSV
+            countries_added = 0
+            for row in csv_data:
+                country_name = row['country'].strip()
+                artist = row['artist'].strip()
+                song = row['song'].strip()
+                
+                # Check if country already exists
+                country = Country.query.filter_by(display_name=country_name).first()
+                
+                if not country:
+                    # Create new country
+                    country = Country(display_name=country_name, artist=artist, song=song)
+                    db.session.add(country)
+                else:
+                    # Update existing country
+                    country.artist = artist
+                    country.song = song
+                
+                # Add country to stage if not already there
+                if country not in stage.countries:
+                    stage.countries.append(country)
+                    countries_added += 1
+            
+            db.session.commit()
+            flash(f"Successfully added {countries_added} countries to {stage_name}", "success")
+            
+            return redirect(url_for('stage', stage_id=stage.id))
+            
+        except Exception as e:
+            flash(f"Error saving data to database: {str(e)}", "danger")
+            return redirect(url_for('fill_db'))
 
     @app.route('/stage/<int:stage_id>/submit/<int:country_id>', methods=['POST'])
     def submit_grades(stage_id, country_id):

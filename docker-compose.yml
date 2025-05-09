@@ -1,9 +1,9 @@
 version: '3.8'
 services:
   web:
-    image: ghcr.io/supercakecrumb/private-eurovision-voting-website:v0.1.0
+    image: ghcr.io/supercakecrumb/private-eurovision-voting-website:v0.1.1
     ports:
-      - "5001:5000"
+      - "5024:5000"
     volumes:
       - ./data:/data  # For any file storage needs
     depends_on:
@@ -14,7 +14,7 @@ services:
       # Set to 1 to automatically initialize the database with Eurovision data when the app starts
       - AUTO_INIT_DB=1
       # Set to 1 to use real Eurovision 2023 data instead of dummy data
-      - USE_REAL_EUROVISION_DATA=1
+      - USE_REAL_EUROVISION_DATA=0
       # Optional: Set a custom secret key for session security
       - SECRET_KEY=${SECRET_KEY:-default_dev_key_change_in_production}
     restart: unless-stopped

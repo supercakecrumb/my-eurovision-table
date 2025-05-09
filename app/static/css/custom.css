@@ -1,0 +1,52 @@
+/* Custom CSS for Eurovision Voting Website */
+
+/* Enhanced hover effects for stage cards */
+.stage-card {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.stage-link:hover .stage-card {
+    background-color: rgba(233, 30, 99, 0.1);
+    border-color: var(--eurovision-pink);
+    cursor: pointer;
+}
+
+.dark-theme .stage-link:hover .stage-card {
+    background-color: rgba(187, 134, 252, 0.2);
+    border-color: var(--eurovision-pink);
+}
+
+/* CSV upload form styling */
+.csv-upload-form {
+    border-radius: 8px;
+    padding: 20px;
+    background-color: var(--eurovision-light);
+}
+
+.dark-theme .csv-upload-form {
+    background-color: #2d2d2d;
+}
+
+/* File input styling */
+input[type="file"] {
+    padding: 10px;
+    border-radius: 4px;
+}
+
+/* Preview table styling */
+.preview-table {
+    margin-top: 20px;
+}
+
+/* Flag emoji styling */
+.flag-emoji {
+    font-size: 1.5rem;
+    margin-right: 10px;
+}
+
+/* Button hover effects */
+.btn-eurovision:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}

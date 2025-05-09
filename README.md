@@ -17,6 +17,7 @@ Private Eurovision Voting Website is a Flask-based web application that allows u
 - **Voting System**: Grade performances from 1-12 points (Eurovision style)
 - **Real-time Rankings**: View current standings based on all votes
 - **Responsive Design**: Bootstrap-based UI that works on various devices
+- **CSV Data Import**: Paste CSV data to populate the database with Eurovision contestants
 
 ## Technical Stack
 
@@ -193,6 +194,24 @@ PostgreSQL data is stored in a Docker volume (`postgres_data`), ensuring your da
 2. Select a stage (Semi-final 1, Semi-final 2, or Final)
 3. Vote for each country's performance by assigning points (1-12)
 4. View the current rankings in the Rankings tab
+5. View other users' votes by clicking on their usernames
+
+### Importing Data from CSV
+
+1. Log in to the application
+2. Click on the "Fill DB" button in the navigation bar
+3. Select the stage you want to import data for (Semi-final 1, Semi-final 2, or Final)
+4. Paste CSV data with the following format:
+   ```
+   country,artist,song
+   Sweden,Loreen,Tattoo
+   Finland,Käärijä,Cha Cha Cha
+   ...
+   ```
+5. Review the preview of the data
+6. Click "Confirm and Save to Database" to import the data
+
+You can copy a sample CSV format from the Fill Database page with a single click.
 
 ## Recent Improvements
 
@@ -223,6 +242,7 @@ PostgreSQL data is stored in a Docker volume (`postgres_data`), ensuring your da
 4. **Testing Mode**: Implemented a testing mode with comprehensive data from previous Eurovision contests.
 5. **Improved Feedback**: Enhanced console output during database initialization for better visibility.
 6. **GitHub Actions**: Added automated Docker image building and publishing to GitHub Container Registry.
+7. **CSV Import**: Added a user-friendly interface for importing Eurovision contestant data by pasting CSV content.
 
 ## Remaining Limitations
 
