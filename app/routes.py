@@ -19,23 +19,48 @@ def configure_routes(app):
         form = LoginForm()
         if form.validate_on_submit():
             username = form.username.data
+            
+            # Clear any existing session data
+            session.pop('user_id', None)
+            session.pop('username', None)
+            
+            # Find or create user
             user = User.query.filter_by(username=username).first()
             if not user:
-                user = User(username=username)
-                db.session.add(user)
-                db.session.commit()
+                try:
+                    user = User(username=username)
+                    db.session.add(user)
+                    db.session.commit()
+                    flash(f"Welcome, {username}! Your account has been created.", "success")
+                except Exception as e:
+                    db.session.rollback()
+                    flash(f"Error creating user: {str(e)}", "danger")
+                    return render_template('index.html', form=form, stages=[])
+            
+            # Store user info in session
             session['user_id'] = user.id
-            session['username'] = username  # Store username in session for display
+            session['username'] = username
+            flash(f"Welcome back, {username}!", "success")
+            
         stages = Stage.query.all()
         return render_template('index.html', form=form, stages=stages)
 
     @app.route('/stage/<int:stage_id>')
     def stage(stage_id):
         if 'user_id' not in session:
-            return redirect(url_for('index'))  # Fixed: redirect to index instead of login
+            flash("Please log in to view stages", "warning")
+            return redirect(url_for('index'))
+
+        # Verify user exists in database
+        user_id = session['user_id']
+        user = User.query.get(user_id)
+        if not user:
+            flash("Your session has expired. Please log in again.", "danger")
+            session.pop('user_id', None)
+            session.pop('username', None)
+            return redirect(url_for('index'))
 
         stage = Stage.query.get_or_404(stage_id)
-        user_id = session['user_id']
 
         grades = {grade.country_id: grade.value for grade in
                   Grade.query.filter_by(user_id=user_id, stage_id=stage_id).all()}
@@ -105,6 +130,15 @@ def configure_routes(app):
             flash("You need to be logged in to access this page", "warning")
             return redirect(url_for('index'))
             
+        # Verify user exists in database
+        user_id = session['user_id']
+        user = User.query.get(user_id)
+        if not user:
+            flash("Your session has expired. Please log in again.", "danger")
+            session.pop('user_id', None)
+            session.pop('username', None)
+            return redirect(url_for('index'))
+            
         # Initialize variables for template
         preview_data = None
         selected_stage = None
@@ -171,6 +205,15 @@ def configure_routes(app):
     def confirm_fill_db():
         if 'user_id' not in session:
             flash("You need to be logged in to access this page", "warning")
+            return redirect(url_for('index'))
+            
+        # Verify user exists in database
+        user_id = session['user_id']
+        user = User.query.get(user_id)
+        if not user:
+            flash("Your session has expired. Please log in again.", "danger")
+            session.pop('user_id', None)
+            session.pop('username', None)
             return redirect(url_for('index'))
             
         # Get form data
@@ -260,6 +303,16 @@ def configure_routes(app):
             return redirect(url_for('index'))
 
         user_id = session['user_id']
+        
+        # Verify user exists in database
+        user = User.query.get(user_id)
+        if not user:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': "User not found. Please log in again."})
+            flash("User not found. Please log in again.", "danger")
+            session.pop('user_id', None)
+            session.pop('username', None)
+            return redirect(url_for('index'))
         # Convert grade_value to integer
         try:
             grade_value = int(request.form.get('grade'))
@@ -269,34 +322,6 @@ def configure_routes(app):
                     return jsonify({'success': False, 'message': "Grade must be between 1 and 12"})
                 flash("Grade must be between 1 and 12", "danger")
                 return redirect(url_for('stage', stage_id=stage_id))
-            
-            # Make sure this route is registered with the app
-            @app.route('/stage/<int:stage_id>/user/<int:user_id>')
-            def user_votes(stage_id, user_id):
-                if 'user_id' not in session:
-                    flash("Please log in to view user votes", "warning")
-                    return redirect(url_for('index'))
-                    
-                stage = Stage.query.get_or_404(stage_id)
-                user = User.query.get_or_404(user_id)
-                
-                # Get all grades for this user in this stage
-                grades = Grade.query.filter_by(user_id=user_id, stage_id=stage_id).all()
-                
-                # Create a list of (country, grade) tuples
-                user_grades = []
-                for grade in grades:
-                    country = Country.query.get(grade.country_id)
-                    user_grades.append((country, grade.value))
-                    
-                # Sort by grade value (highest first)
-                user_grades.sort(key=lambda x: x[1], reverse=True)
-                
-                return render_template('user_votes.html',
-                                      user=user,
-                                      stage=stage,
-                                      user_grades=user_grades,
-                                      country_flags=country_flags)
         except (ValueError, TypeError):
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify({'success': False, 'message': "Invalid grade value"})
@@ -334,3 +359,43 @@ def configure_routes(app):
             
         flash("Your vote has been recorded!", "success")
         return redirect(url_for('stage', stage_id=stage_id))
+        
+    @app.route('/stage/<int:stage_id>/user/<int:user_id>')
+    def user_votes(stage_id, user_id):
+        if 'user_id' not in session:
+            flash("Please log in to view user votes", "warning")
+            return redirect(url_for('index'))
+            
+        # Verify current user exists in database
+        current_user = User.query.get(session['user_id'])
+        if not current_user:
+            flash("Your session has expired. Please log in again.", "danger")
+            session.pop('user_id', None)
+            session.pop('username', None)
+            return redirect(url_for('index'))
+            
+        stage = Stage.query.get_or_404(stage_id)
+        
+        # Verify requested user exists
+        user = User.query.get(user_id)
+        if not user:
+            flash("The requested user does not exist.", "danger")
+            return redirect(url_for('stage', stage_id=stage_id))
+        
+        # Get all grades for this user in this stage
+        grades = Grade.query.filter_by(user_id=user_id, stage_id=stage_id).all()
+        
+        # Create a list of (country, grade) tuples
+        user_grades = []
+        for grade in grades:
+            country = Country.query.get(grade.country_id)
+            user_grades.append((country, grade.value))
+            
+        # Sort by grade value (highest first)
+        user_grades.sort(key=lambda x: x[1], reverse=True)
+        
+        return render_template('user_votes.html',
+                              user=user,
+                              stage=stage,
+                              user_grades=user_grades,
+                              country_flags=country_flags)
