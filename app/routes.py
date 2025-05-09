@@ -2,6 +2,7 @@ from flask import render_template, request, redirect, session, url_for, flash, j
 from .models import db, User, Stage, Country, Grade
 from .forms import LoginForm, GradeForm
 from .country_flags import country_flags, get_flag_emoji
+from datetime import datetime
 import csv
 import io
 
@@ -62,8 +63,27 @@ def configure_routes(app):
 
         stage = Stage.query.get_or_404(stage_id)
 
-        grades = {grade.country_id: grade.value for grade in
-                  Grade.query.filter_by(user_id=user_id, stage_id=stage_id).all()}
+        # Get the latest grade for each country
+        latest_grades = db.session.query(
+            Grade.country_id,
+            db.func.max(Grade.timestamp).label('latest_timestamp')
+        ).filter_by(
+            user_id=user_id,
+            stage_id=stage_id
+        ).group_by(Grade.country_id).all()
+        
+        # Create a dictionary of country_id to grade value
+        grades = {}
+        for country_id, latest_timestamp in latest_grades:
+            grade = Grade.query.filter_by(
+                user_id=user_id,
+                stage_id=stage_id,
+                country_id=country_id,
+                timestamp=latest_timestamp
+            ).first()
+            
+            if grade:
+                grades[country_id] = grade.value
 
         # Fetch sum of grades for each country in this stage from all users
         rankings = db.session.query(
@@ -328,13 +348,16 @@ def configure_routes(app):
             flash("Invalid grade value", "danger")
             return redirect(url_for('stage', stage_id=stage_id))
 
-        existing_grade = Grade.query.filter_by(user_id=user_id, stage_id=stage_id, country_id=country_id).first()
-
-        if existing_grade:
-            existing_grade.value = grade_value
-        else:
-            new_grade = Grade(user_id=user_id, stage_id=stage_id, country_id=country_id, value=grade_value)
-            db.session.add(new_grade)
+        # Always create a new grade with the current timestamp
+        # This ensures we have a history of all votes and can get the latest one
+        new_grade = Grade(
+            user_id=user_id,
+            stage_id=stage_id,
+            country_id=country_id,
+            value=grade_value,
+            timestamp=datetime.utcnow()
+        )
+        db.session.add(new_grade)
 
         db.session.commit()
         
@@ -382,14 +405,30 @@ def configure_routes(app):
             flash("The requested user does not exist.", "danger")
             return redirect(url_for('stage', stage_id=stage_id))
         
-        # Get all grades for this user in this stage
-        grades = Grade.query.filter_by(user_id=user_id, stage_id=stage_id).all()
+        # Get all grades for this user in this stage, ensuring no duplicates
+        # Use distinct to get only the latest grade for each country
+        latest_grades = db.session.query(
+            Grade.country_id,
+            db.func.max(Grade.timestamp).label('latest_timestamp')
+        ).filter_by(
+            user_id=user_id,
+            stage_id=stage_id
+        ).group_by(Grade.country_id).all()
         
         # Create a list of (country, grade) tuples
         user_grades = []
-        for grade in grades:
-            country = Country.query.get(grade.country_id)
-            user_grades.append((country, grade.value))
+        for country_id, latest_timestamp in latest_grades:
+            # Get the grade with the latest timestamp
+            grade = Grade.query.filter_by(
+                user_id=user_id,
+                stage_id=stage_id,
+                country_id=country_id,
+                timestamp=latest_timestamp
+            ).first()
+            
+            if grade:
+                country = Country.query.get(grade.country_id)
+                user_grades.append((country, grade.value))
             
         # Sort by grade value (highest first)
         user_grades.sort(key=lambda x: x[1], reverse=True)
