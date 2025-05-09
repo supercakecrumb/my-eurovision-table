@@ -34,7 +34,7 @@
         <div class="tab-content" id="eurovisionTabsContent">
             <div class="tab-pane fade show active" id="voting" role="tabpanel" aria-labelledby="voting-tab">
                 <div class="table-responsive">
-                    <table class="table table-hover table-striped align-middle" style="background-color: var(--eurovision-light); color: var(--eurovision-blue);">
+                    <table class="table align-middle" id="voting-table">
                         <thead>
                             <tr class="text-center">
                                 <th>Country</th>
@@ -47,7 +47,7 @@
                         <tbody>
                             {% for country in countries %}
                             <tr>
-                                <form method="POST" action="{{ url_for('submit_grades', stage_id=stage.id, country_id=country.id) }}">
+                                <form id="form-{{ country.id }}" method="POST" action="{{ url_for('submit_grades', stage_id=stage.id, country_id=country.id) }}">
                                     <td class="fw-bold">
                                         <div class="d-flex align-items-center">
                                             <span class="me-2">{{ country.display_name }}</span>
@@ -58,14 +58,16 @@
                                     <td>
                                         <div class="input-group">
                                             <input type="number" name="grade" min="1" max="12" value="{{ grades.get(country.id, '') }}"
-                                                class="form-control text-center" required>
+                                                class="form-control text-center grade-input" data-country-id="{{ country.id }}" required>
                                             <span class="input-group-text">points</span>
                                         </div>
                                     </td>
                                     <td class="text-center">
-                                        <button type="submit" class="btn btn-eurovision">
-                                            <i class="fas fa-check me-1"></i> Vote
-                                        </button>
+                                        <span class="vote-status" id="status-{{ country.id }}">
+                                            {% if country.id in grades %}
+                                                <i class="fas fa-check-circle text-success"></i>
+                                            {% endif %}
+                                        </span>
                                     </td>
                                 </form>
                             </tr>
@@ -76,7 +78,7 @@
             </div>
             <div class="tab-pane fade" id="rankings" role="tabpanel" aria-labelledby="rankings-tab">
                 <div class="table-responsive">
-                    <table class="table table-hover table-striped align-middle">
+                    <table class="table align-middle" id="rankings-table">
                         <thead>
                             <tr class="text-center">
                                 <th style="width: 80px;">Rank</th>
@@ -109,15 +111,111 @@
                 </div>
             </div>
         <style>
-            .dark-theme .table {
-                background-color: #1f1f1f !important;
-                color: #e0e0e0 !important;
+            /* Table styling for both light and dark themes */
+            #voting-table, #rankings-table {
+                border-radius: 8px;
+                overflow: hidden;
             }
-            .dark-theme .table thead {
-                background-color: var(--eurovision-blue) !important;
-                color: white !important;
+            
+            /* Light theme table styling */
+            #voting-table, #rankings-table {
+                background-color: var(--eurovision-light);
+                color: var(--eurovision-blue);
+            }
+            
+            #voting-table thead, #rankings-table thead {
+                background-color: var(--eurovision-blue);
+                color: white;
+            }
+            
+            /* Dark theme table styling */
+            .dark-theme #voting-table, .dark-theme #rankings-table {
+                background-color: #2d2d2d;
+                color: #e0e0e0;
+            }
+            
+            .dark-theme #voting-table thead, .dark-theme #rankings-table thead {
+                background-color: #3d3d3d;
+                color: white;
+            }
+            
+            /* Row hover effect */
+            #voting-table tbody tr:hover, #rankings-table tbody tr:hover {
+                background-color: rgba(233, 30, 99, 0.1);
+            }
+            
+            /* Active tab table styling */
+            .tab-pane.active #voting-table, .tab-pane.active #rankings-table {
+                box-shadow: 0 0 15px rgba(233, 30, 99, 0.2);
+            }
+            
+            .dark-theme .tab-pane.active #voting-table, .dark-theme .tab-pane.active #rankings-table {
+                box-shadow: 0 0 15px rgba(187, 134, 252, 0.3);
             }
         </style>
+        
+        <script>
+            // Auto-submit form when grade input changes
+            document.addEventListener('DOMContentLoaded', function() {
+                const gradeInputs = document.querySelectorAll('.grade-input');
+                
+                gradeInputs.forEach(input => {
+                    input.addEventListener('change', function() {
+                        const countryId = this.dataset.countryId;
+                        const form = document.getElementById('form-' + countryId);
+                        const statusElement = document.getElementById('status-' + countryId);
+                        
+                        // Show loading indicator
+                        statusElement.innerHTML = '<i class="fas fa-spinner fa-spin text-primary"></i>';
+                        
+                        // Submit form using fetch API
+                        fetch(form.action, {
+                            method: 'POST',
+                            body: new FormData(form),
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                statusElement.innerHTML = '<i class="fas fa-check-circle text-success"></i>';
+                                
+                                // Update rankings if needed
+                                if (data.rankings) {
+                                    // This would update the rankings tab if implemented
+                                }
+                            } else {
+                                statusElement.innerHTML = '<i class="fas fa-exclamation-circle text-danger"></i>';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            statusElement.innerHTML = '<i class="fas fa-exclamation-circle text-danger"></i>';
+                        });
+                    });
+                });
+                
+                // Add active class to the current tab's table
+                const tabs = document.querySelectorAll('button[data-bs-toggle="tab"]');
+                tabs.forEach(tab => {
+                    tab.addEventListener('shown.bs.tab', function(event) {
+                        const targetId = event.target.getAttribute('data-bs-target').substring(1);
+                        const targetPane = document.getElementById(targetId);
+                        
+                        if (targetPane) {
+                            const tables = document.querySelectorAll('.table');
+                            tables.forEach(table => table.classList.remove('active-table'));
+                            
+                            const targetTable = targetPane.querySelector('.table');
+                            if (targetTable) {
+                                targetTable.classList.add('active-table');
+                            }
+                        }
+                    });
+                });
+            });
+        </script>
         </div>
     </div>
 </div>

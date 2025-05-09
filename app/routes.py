@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, session, url_for, flash
+from flask import render_template, request, redirect, session, url_for, flash, jsonify
 from .models import db, User, Stage, Country, Grade
 from .forms import LoginForm, GradeForm
 
@@ -65,8 +65,10 @@ def configure_routes(app):
     @app.route('/stage/<int:stage_id>/submit/<int:country_id>', methods=['POST'])
     def submit_grades(stage_id, country_id):
         if 'user_id' not in session:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': "Please log in to vote"})
             flash("Please log in to vote", "warning")
-            return redirect(url_for('index'))  # Fixed: redirect to index instead of login
+            return redirect(url_for('index'))
 
         user_id = session['user_id']
         # Convert grade_value to integer
@@ -74,9 +76,13 @@ def configure_routes(app):
             grade_value = int(request.form.get('grade'))
             # Validate grade is within allowed range
             if not 1 <= grade_value <= 12:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'success': False, 'message': "Grade must be between 1 and 12"})
                 flash("Grade must be between 1 and 12", "danger")
                 return redirect(url_for('stage', stage_id=stage_id))
         except (ValueError, TypeError):
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': "Invalid grade value"})
             flash("Invalid grade value", "danger")
             return redirect(url_for('stage', stage_id=stage_id))
 
@@ -89,5 +95,25 @@ def configure_routes(app):
             db.session.add(new_grade)
 
         db.session.commit()
+        
+        # Handle AJAX requests
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            # Get updated rankings for this stage
+            rankings = db.session.query(
+                Country.id,
+                db.func.sum(Grade.value).label('total_grade')
+            ).join(Grade).filter(Grade.stage_id == stage_id).group_by(Country.id).order_by(
+                db.func.sum(Grade.value).desc()).all()
+            
+            # Format rankings for JSON response
+            rankings_data = [{'country_id': country_id, 'total_grade': total_grade}
+                            for country_id, total_grade in rankings]
+            
+            return jsonify({
+                'success': True,
+                'message': "Your vote has been recorded!",
+                'rankings': rankings_data
+            })
+            
         flash("Your vote has been recorded!", "success")
         return redirect(url_for('stage', stage_id=stage_id))

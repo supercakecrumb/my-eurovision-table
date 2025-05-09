@@ -29,48 +29,21 @@
             padding: 15px 0;
         }
 
-        /* Remove button rectangles */
+        /* Button styling */
         .btn-outline-eurovision, .btn-outline-light {
-            border: none !important;
+            border: 1px solid !important;
             box-shadow: none !important;
+            transition: all 0.3s ease;
         }
 
         .btn-outline-eurovision:hover, .btn-outline-light:hover {
-            background: none !important;
-            box-shadow: none !important;
+            background-color: rgba(255, 255, 255, 0.2) !important;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2) !important;
         }
 
         /* Fix black text in titles */
         h1, h2, h3, h4, h5, h6, p, span, a {
             color: inherit !important;
-        }
-
-        /* Ensure all text is readable in dark theme */
-        .dark-theme {
-            --eurovision-blue: #121212;
-            --eurovision-pink: #bb86fc;
-            --eurovision-purple: #3700b3;
-            --eurovision-light: #1f1f1f;
-            background-color: #121212;
-            color: #e0e0e0;
-        }
-
-        .dark-theme .navbar,
-        .dark-theme .card,
-        .dark-theme .btn-eurovision,
-        .dark-theme .btn-outline-eurovision,
-        .dark-theme .table,
-        .dark-theme .table thead {
-            color: #e0e0e0;
-        }
-
-        .dark-theme .btn-outline-eurovision:hover {
-            background-color: #bb86fc;
-            color: black;
-        }
-
-        .dark-theme a {
-            color: #bb86fc;
         }
 
         /* Dark Theme */
@@ -84,17 +57,57 @@
         }
 
         .dark-theme .navbar {
-            background: linear-gradient(135deg, var(--eurovision-blue), var(--eurovision-purple)) !important;
+            background: linear-gradient(135deg, #1f1f1f, #3700b3) !important;
         }
 
         .dark-theme .card {
-            background-color: var(--eurovision-light);
+            background-color: #2d2d2d;
             color: #e0e0e0;
+        }
+
+        .dark-theme .card-header {
+            background-color: #3d3d3d;
         }
 
         .dark-theme .btn-eurovision {
             background-color: var(--eurovision-pink);
-            color: black;
+            color: white;
+        }
+
+        .dark-theme .btn-outline-eurovision {
+            color: #e0e0e0;
+            border-color: #bb86fc !important;
+        }
+
+        .dark-theme .btn-outline-eurovision:hover {
+            background-color: rgba(187, 134, 252, 0.2) !important;
+            color: #bb86fc;
+        }
+
+        .dark-theme .btn-outline-light {
+            color: #e0e0e0;
+            border-color: #e0e0e0 !important;
+        }
+
+        .dark-theme .btn-outline-light:hover {
+            background-color: rgba(224, 224, 224, 0.2) !important;
+            color: #ffffff;
+        }
+
+        .dark-theme a {
+            color: #bb86fc;
+        }
+
+        .dark-theme .form-control {
+            background-color: #3d3d3d;
+            color: #e0e0e0;
+            border-color: #4d4d4d;
+        }
+
+        .dark-theme .input-group-text {
+            background-color: #4d4d4d;
+            color: #e0e0e0;
+            border-color: #4d4d4d;
         }
         
         .navbar-brand {
@@ -193,12 +206,12 @@
             <div class="d-flex align-items-center">
                 {% if session.user_id %}
                     <span class="text-light me-3">Hello, {{ session.username }}!</span>
-                    <a href="/logout" class="btn btn-outline-eurovision me-2"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                    <a href="/logout" class="btn btn-outline-eurovision me-2"><i class="fas fa-sign-out-alt me-1"></i> Logout</a>
                     <button id="theme-toggle" class="btn btn-outline-light">
-                        <i id="theme-icon" class="fas fa-moon"></i>
+                        <i id="theme-icon" class="fas fa-moon me-1"></i> Theme
                     </button>
                 {% else %}
-                    <a href="/" class="btn btn-outline-eurovision"><i class="fas fa-sign-in-alt"></i> Login</a>
+                    <a href="/" class="btn btn-outline-eurovision"><i class="fas fa-sign-in-alt me-1"></i> Login</a>
                 {% endif %}
             </div>
         </div>
@@ -218,14 +231,20 @@
             themeIcon.classList.replace('fa-moon', 'fa-sun');
         } else {
             body.classList.add('dark-theme');
+            themeIcon.classList.replace('fa-moon', 'fa-sun');
         }
 
         // Toggle theme on button click
         themeToggle.addEventListener('click', () => {
             body.classList.toggle('dark-theme');
             const isDark = body.classList.contains('dark-theme');
-            themeIcon.classList.toggle('fa-moon', !isDark);
-            themeIcon.classList.toggle('fa-sun', isDark);
+            
+            if (isDark) {
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
+            } else {
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
+            }
+            
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
         });
     </script>
