@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   web:
-    image: ghcr.io/supercakecrumb/private-eurovision-voting-website:v0.1.1
+    image: ghcr.io/supercakecrumb/private-eurovision-voting-website:0.1.1
     ports:
       - "5024:5000"
     volumes:
