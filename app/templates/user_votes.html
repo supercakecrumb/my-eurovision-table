@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}{{ user.username }}'s Votes{% endblock %}
+{% block body %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="mb-0" style="color: var(--eurovision-blue);">
+                <i class="fas fa-user me-2"></i>{{ user.username }}'s Votes
+            </h1>
+            <div>
+                <a href="{{ url_for('stage', stage_id=stage.id) }}#users" class="btn text-secondary">
+                    <i class="fas fa-users me-2"></i>Back to Users
+                </a>
+                <a href="{{ url_for('stage', stage_id=stage.id) }}" class="btn text-secondary ms-2">
+                    <i class="fas fa-arrow-left me-2"></i>Back to {{ stage.display_name }}
+                </a>
+            </div>
+        </div>
+        <hr>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="mb-0"><i class="fas fa-star me-2"></i>Votes for {{ stage.display_name }}</h3>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table align-middle" id="user-votes-table">
+                <thead>
+                    <tr class="text-center">
+                        <th style="width: 180px;">Country</th>
+                        <th>Artist</th>
+                        <th>Song</th>
+                        <th style="width: 120px;">Points</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for country, grade in user_grades %}
+                    <tr>
+                        <td class="fw-bold">
+                            <div class="d-flex align-items-center">
+                                <span class="me-2 fs-4">{{ country_flags.get(country.display_name, "🇪🇺") }}</span>
+                                <span>{{ country.display_name }}</span>
+                            </div>
+                        </td>
+                        <td>{{ country.artist }}</td>
+                        <td>{{ country.song }}</td>
+                        <td class="text-center">
+                            <span class="badge bg-primary rounded-pill px-3 py-2">{{ grade }} points</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Table styling for both light and dark themes */
+    #user-votes-table {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    /* Light theme table styling */
+    #user-votes-table {
+        background-color: var(--eurovision-light);
+        color: var(--eurovision-blue);
+    }
+    
+    #user-votes-table thead {
+        background-color: var(--eurovision-blue);
+        color: white;
+    }
+    
+    /* Dark theme table styling */
+    .dark-theme #user-votes-table {
+        background-color: #2d2d2d;
+        color: #e0e0e0;
+    }
+    
+    .dark-theme #user-votes-table thead {
+        background-color: #3d3d3d;
+        color: white;
+    }
+    
+    /* Row hover effect */
+    #user-votes-table tbody tr:hover {
+        background-color: rgba(233, 30, 99, 0.1);
+    }
+</style>
+{% endblock %}

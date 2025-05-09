@@ -1,8 +1,10 @@
 from flask import render_template, request, redirect, session, url_for, flash, jsonify
 from .models import db, User, Stage, Country, Grade
 from .forms import LoginForm, GradeForm
+from .country_flags import country_flags, get_flag_emoji
 
 def configure_routes(app):
+    # Register all routes with the app
     @app.route('/logout')
     def logout():
         session.pop('user_id', None)
@@ -58,9 +60,41 @@ def configure_routes(app):
         )
 
         ranking_items = [(Country.query.get(country_id), total_grade) for country_id, total_grade in rankings]
+        
+        # Get all users for the users tab
+        users = User.query.all()
+        
+        # Count votes per user for this stage
+        user_votes = {}
+        for user in users:
+            vote_count = Grade.query.filter_by(user_id=user.id, stage_id=stage_id).count()
+            user_votes[user.id] = vote_count
+        
+        # Find favorite country for each user (highest grade)
+        user_favorites = {}
+        for user in users:
+            # Get the highest grade for this user in this stage
+            highest_grade = db.session.query(
+                Grade.country_id,
+                Grade.value
+            ).filter_by(
+                user_id=user.id,
+                stage_id=stage_id
+            ).order_by(Grade.value.desc()).first()
+            
+            if highest_grade:
+                country_id, _ = highest_grade
+                user_favorites[user.id] = Country.query.get(country_id)
 
-        return render_template('stage.html', stage=stage, countries=sorted_countries, grades=grades,
-                               ranking_items=ranking_items)
+        return render_template('stage.html',
+                              stage=stage,
+                              countries=sorted_countries,
+                              grades=grades,
+                              ranking_items=ranking_items,
+                              users=users,
+                              user_votes=user_votes,
+                              user_favorites=user_favorites,
+                              country_flags=country_flags)
 
     @app.route('/stage/<int:stage_id>/submit/<int:country_id>', methods=['POST'])
     def submit_grades(stage_id, country_id):
@@ -80,6 +114,34 @@ def configure_routes(app):
                     return jsonify({'success': False, 'message': "Grade must be between 1 and 12"})
                 flash("Grade must be between 1 and 12", "danger")
                 return redirect(url_for('stage', stage_id=stage_id))
+            
+            # Make sure this route is registered with the app
+            @app.route('/stage/<int:stage_id>/user/<int:user_id>')
+            def user_votes(stage_id, user_id):
+                if 'user_id' not in session:
+                    flash("Please log in to view user votes", "warning")
+                    return redirect(url_for('index'))
+                    
+                stage = Stage.query.get_or_404(stage_id)
+                user = User.query.get_or_404(user_id)
+                
+                # Get all grades for this user in this stage
+                grades = Grade.query.filter_by(user_id=user_id, stage_id=stage_id).all()
+                
+                # Create a list of (country, grade) tuples
+                user_grades = []
+                for grade in grades:
+                    country = Country.query.get(grade.country_id)
+                    user_grades.append((country, grade.value))
+                    
+                # Sort by grade value (highest first)
+                user_grades.sort(key=lambda x: x[1], reverse=True)
+                
+                return render_template('user_votes.html',
+                                      user=user,
+                                      stage=stage,
+                                      user_grades=user_grades,
+                                      country_flags=country_flags)
         except (ValueError, TypeError):
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify({'success': False, 'message': "Invalid grade value"})

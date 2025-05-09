@@ -47,8 +47,8 @@
                     <div class="row row-cols-1 row-cols-md-3 g-4">
                         {% for stage in stages %}
                         <div class="col">
-                            <a href="{{ url_for('stage', stage_id=stage.id) }}" style="text-decoration: none; color: inherit;">
-                                <div class="card h-100">
+                            <a href="{{ url_for('stage', stage_id=stage.id) }}" class="stage-link" style="text-decoration: none; color: inherit;">
+                                <div class="card h-100 stage-card">
                                     <div class="card-body text-center">
                                         <h5 class="card-title">{{ stage.display_name }}</h5>
                                     </div>
@@ -63,3 +63,43 @@
     </div>
     {% endif %}
 {% endblock %}
+
+<style>
+    /* Stage card hover effect */
+    .stage-card {
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    
+    .stage-link:hover .stage-card {
+        background-color: rgba(233, 30, 99, 0.1);
+        border-color: var(--eurovision-pink);
+        cursor: pointer;
+    }
+    
+    .dark-theme .stage-link:hover .stage-card {
+        background-color: rgba(187, 134, 252, 0.2);
+        border-color: var(--eurovision-pink);
+    }
+</style>
+
+<script>
+    // Add hover effect to stage cards
+    document.addEventListener('DOMContentLoaded', function() {
+        const stageLinks = document.querySelectorAll('.stage-link');
+        
+        stageLinks.forEach(link => {
+            link.addEventListener('mouseenter', function() {
+                const card = this.querySelector('.stage-card');
+                card.style.backgroundColor = 'rgba(233, 30, 99, 0.1)';
+                card.style.borderColor = 'var(--eurovision-pink)';
+            });
+            
+            link.addEventListener('mouseleave', function() {
+                const card = this.querySelector('.stage-card');
+                card.style.backgroundColor = '';
+                card.style.borderColor = 'transparent';
+            });
+        });
+    });
+</script>

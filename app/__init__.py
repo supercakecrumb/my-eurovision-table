@@ -60,4 +60,37 @@ with app.app_context():
         else:
             print("ℹ️ Database already contains data - skipping auto-initialization")
 
+# Configure routes
 configure_routes(app)
+
+# Add user_votes route directly to ensure it's registered
+@app.route('/stage/<int:stage_id>/user/<int:user_id>')
+def user_votes(stage_id, user_id):
+    from flask import render_template, redirect, url_for, flash, session
+    from .models import User, Stage, Grade, Country
+    from .country_flags import country_flags
+    
+    if 'user_id' not in session:
+        flash("Please log in to view user votes", "warning")
+        return redirect(url_for('index'))
+        
+    stage = Stage.query.get_or_404(stage_id)
+    user = User.query.get_or_404(user_id)
+    
+    # Get all grades for this user in this stage
+    grades = Grade.query.filter_by(user_id=user_id, stage_id=stage_id).all()
+    
+    # Create a list of (country, grade) tuples
+    user_grades = []
+    for grade in grades:
+        country = Country.query.get(grade.country_id)
+        user_grades.append((country, grade.value))
+        
+    # Sort by grade value (highest first)
+    user_grades.sort(key=lambda x: x[1], reverse=True)
+    
+    return render_template('user_votes.html',
+                          user=user,
+                          stage=stage,
+                          user_grades=user_grades,
+                          country_flags=country_flags)

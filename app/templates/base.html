@@ -8,6 +8,18 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <title>{% block title %}{% endblock %}</title>
     <style>
+        /* Remove number input arrows */
+        /* Chrome, Safari, Edge, Opera */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        /* Firefox */
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
         :root {
             --eurovision-blue: #1e3a8a;
             --eurovision-pink: #e91e63;
@@ -31,14 +43,14 @@
 
         /* Button styling */
         .btn-outline-eurovision, .btn-outline-light {
-            border: 1px solid !important;
+            border: none !important;
             box-shadow: none !important;
             transition: all 0.3s ease;
         }
 
         .btn-outline-eurovision:hover, .btn-outline-light:hover {
             background-color: rgba(255, 255, 255, 0.2) !important;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2) !important;
+            box-shadow: none !important;
         }
 
         /* Fix black text in titles */
@@ -139,13 +151,20 @@
         
         .btn-outline-eurovision {
             color: white;
-            border-color: white;
             font-weight: 600;
         }
         
         .btn-outline-eurovision:hover {
-            background-color: white;
-            color: var(--eurovision-purple);
+            color: var(--eurovision-pink);
+        }
+        
+        /* Fix logout button in light theme */
+        .btn-outline-eurovision {
+            color: var(--eurovision-blue) !important;
+        }
+        
+        .dark-theme .btn-outline-eurovision {
+            color: white !important;
         }
         
         .container {
@@ -160,8 +179,9 @@
             transition: transform 0.3s;
         }
         
+        /* Remove hover transform effect */
         .card:hover {
-            transform: translateY(-5px);
+            transform: none;
         }
         
         .card-header {
@@ -206,7 +226,7 @@
             <div class="d-flex align-items-center">
                 {% if session.user_id %}
                     <span class="text-light me-3">Hello, {{ session.username }}!</span>
-                    <a href="/logout" class="btn btn-outline-eurovision me-2"><i class="fas fa-sign-out-alt me-1"></i> Logout</a>
+                    <a href="/logout" class="btn btn-outline-eurovision me-2" style="color: var(--eurovision-blue);"><i class="fas fa-sign-out-alt me-1"></i> Logout</a>
                     <button id="theme-toggle" class="btn btn-outline-light">
                         <i id="theme-icon" class="fas fa-moon me-1"></i> Theme
                     </button>

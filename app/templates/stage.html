@@ -7,7 +7,7 @@
             <h1 class="mb-0" style="color: var(--eurovision-blue);">
                 <i class="fas fa-microphone-alt me-2"></i>{{ stage.display_name }}
             </h1>
-            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+            <a href="{{ url_for('index') }}" class="btn text-secondary">
                 <i class="fas fa-arrow-left me-2"></i>Back to Stages
             </a>
         </div>
@@ -28,6 +28,11 @@
                     <i class="fas fa-trophy me-2"></i>Rankings
                 </button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab" aria-controls="users" aria-selected="false">
+                    <i class="fas fa-users me-2"></i>All Users
+                </button>
+            </li>
         </ul>
     </div>
     <div class="card-body">
@@ -37,11 +42,11 @@
                     <table class="table align-middle" id="voting-table">
                         <thead>
                             <tr class="text-center">
-                                <th>Country</th>
+                                <th style="width: 180px;">Country</th>
                                 <th>Artist</th>
                                 <th>Song</th>
-                                <th style="width: 150px;">Grade (1-12)</th>
-                                <th style="width: 120px;">Action</th>
+                                <th style="width: 120px;">Grade (1-12)</th>
+                                <th style="width: 80px;">Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -50,17 +55,15 @@
                                 <form id="form-{{ country.id }}" method="POST" action="{{ url_for('submit_grades', stage_id=stage.id, country_id=country.id) }}">
                                     <td class="fw-bold">
                                         <div class="d-flex align-items-center">
-                                            <span class="me-2">{{ country.display_name }}</span>
+                                            <span class="me-2 fs-4">{{ country_flags.get(country.display_name, "🇪🇺") }}</span>
+                                            <span>{{ country.display_name }}</span>
                                         </div>
                                     </td>
                                     <td>{{ country.artist }}</td>
                                     <td>{{ country.song }}</td>
                                     <td>
-                                        <div class="input-group">
-                                            <input type="number" name="grade" min="1" max="12" value="{{ grades.get(country.id, '') }}"
-                                                class="form-control text-center grade-input" data-country-id="{{ country.id }}" required>
-                                            <span class="input-group-text">points</span>
-                                        </div>
+                                        <input type="number" name="grade" min="1" max="12" value="{{ grades.get(country.id, '') }}"
+                                            class="form-control text-center grade-input" data-country-id="{{ country.id }}" required>
                                     </td>
                                     <td class="text-center">
                                         <span class="vote-status" id="status-{{ country.id }}">
@@ -100,9 +103,60 @@
                                         {{ loop.index }}
                                     {% endif %}
                                 </td>
-                                <td class="fw-bold">{{ country.display_name }}</td>
+                                <td class="fw-bold">
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-2 fs-4">{{ country_flags.get(country.display_name, "🇪🇺") }}</span>
+                                        <span>{{ country.display_name }}</span>
+                                    </div>
+                                </td>
                                 <td class="text-center">
                                     <span class="badge bg-primary rounded-pill px-3 py-2">{{ grade }} points</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+            </div>
+            
+            <!-- All Users Tab -->
+            <div class="tab-pane fade" id="users" role="tabpanel" aria-labelledby="users-tab">
+                <div class="table-responsive">
+                    <table class="table align-middle" id="users-table">
+                        <thead>
+                            <tr class="text-center">
+                                <th>Username</th>
+                                <th>Countries Voted</th>
+                                <th>Favorite Country</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td class="fw-bold">
+                                    {% if user.id %}
+                                        <a href="/stage/{{ stage.id }}/user/{{ user.id }}" class="text-decoration-none">
+                                            {{ user.username }}
+                                        </a>
+                                    {% else %}
+                                        {{ user.username }}
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-primary rounded-pill px-3 py-2">
+                                        {{ user_votes.get(user.id, 0) }} votes
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    {% if user_favorites.get(user.id) %}
+                                        <div class="d-flex align-items-center justify-content-center">
+                                            <span class="me-2 fs-4">{{ country_flags.get(user_favorites[user.id].display_name, "🇪🇺") }}</span>
+                                            <span>{{ user_favorites[user.id].display_name }}</span>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">No votes yet</span>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -112,45 +166,36 @@
             </div>
         <style>
             /* Table styling for both light and dark themes */
-            #voting-table, #rankings-table {
+            #voting-table, #rankings-table, #users-table {
                 border-radius: 8px;
                 overflow: hidden;
             }
             
             /* Light theme table styling */
-            #voting-table, #rankings-table {
+            #voting-table, #rankings-table, #users-table {
                 background-color: var(--eurovision-light);
                 color: var(--eurovision-blue);
             }
             
-            #voting-table thead, #rankings-table thead {
+            #voting-table thead, #rankings-table thead, #users-table thead {
                 background-color: var(--eurovision-blue);
                 color: white;
             }
             
             /* Dark theme table styling */
-            .dark-theme #voting-table, .dark-theme #rankings-table {
+            .dark-theme #voting-table, .dark-theme #rankings-table, .dark-theme #users-table {
                 background-color: #2d2d2d;
                 color: #e0e0e0;
             }
             
-            .dark-theme #voting-table thead, .dark-theme #rankings-table thead {
+            .dark-theme #voting-table thead, .dark-theme #rankings-table thead, .dark-theme #users-table thead {
                 background-color: #3d3d3d;
                 color: white;
             }
             
-            /* Row hover effect */
-            #voting-table tbody tr:hover, #rankings-table tbody tr:hover {
+            /* Row hover effect - only change background color, not position */
+            #voting-table tbody tr:hover, #rankings-table tbody tr:hover, #users-table tbody tr:hover {
                 background-color: rgba(233, 30, 99, 0.1);
-            }
-            
-            /* Active tab table styling */
-            .tab-pane.active #voting-table, .tab-pane.active #rankings-table {
-                box-shadow: 0 0 15px rgba(233, 30, 99, 0.2);
-            }
-            
-            .dark-theme .tab-pane.active #voting-table, .dark-theme .tab-pane.active #rankings-table {
-                box-shadow: 0 0 15px rgba(187, 134, 252, 0.3);
             }
         </style>
         
