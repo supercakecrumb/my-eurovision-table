@@ -111,6 +111,8 @@ private-eurovision-voting-website/
 
 ### Docker Deployment
 
+#### Option 1: Using Docker Compose (Local Build)
+
 1. Clone the repository:
    ```
    git clone https://github.com/supercakecrumb/private-eurovision-voting-website.git
@@ -136,6 +138,45 @@ private-eurovision-voting-website/
    ```
 
 4. Access the application at http://localhost:5024
+
+#### Option 2: Using Pre-built Image from GitHub Container Registry
+
+1. Create a `docker-compose.yml` file:
+   ```yaml
+   version: '3.8'
+   
+   services:
+     web:
+       image: ghcr.io/supercakecrumb/private-eurovision-voting-website:latest
+       ports:
+         - "5024:5000"
+       environment:
+         - DATABASE_URL=postgresql://postgres:postgres@db:5432/eurovision
+         - AUTO_INIT_DB=1
+         - USE_REAL_EUROVISION_DATA=1
+         - SECRET_KEY=your_secure_secret_key_here
+       depends_on:
+         - db
+   
+     db:
+       image: postgres:15
+       environment:
+         - POSTGRES_USER=postgres
+         - POSTGRES_PASSWORD=postgres
+         - POSTGRES_DB=eurovision
+       volumes:
+         - postgres_data:/var/lib/postgresql/data
+   
+   volumes:
+     postgres_data:
+   ```
+
+2. Pull and run the containers:
+   ```
+   docker-compose up -d
+   ```
+
+3. Access the application at http://localhost:5024
 
 The application will automatically:
 - Set up a PostgreSQL database
@@ -181,6 +222,7 @@ PostgreSQL data is stored in a Docker volume (`postgres_data`), ensuring your da
 3. **Docker Integration**: Integrated environment variables in docker-compose.yml for easy deployment with real data.
 4. **Testing Mode**: Implemented a testing mode with comprehensive data from previous Eurovision contests.
 5. **Improved Feedback**: Enhanced console output during database initialization for better visibility.
+6. **GitHub Actions**: Added automated Docker image building and publishing to GitHub Container Registry.
 
 ## Remaining Limitations
 
@@ -196,7 +238,24 @@ PostgreSQL data is stored in a Docker volume (`postgres_data`), ensuring your da
 - Implement real-time updates using WebSockets
 - Add more detailed statistics and visualizations
 - Improve error handling and user feedback
+- Set up comprehensive CI/CD pipeline with testing
 
 ## License
 
 © 2024 Aurorass. All rights reserved.
+
+## CI/CD with GitHub Actions
+
+This project uses GitHub Actions for continuous integration and delivery:
+
+1. **Automated Docker Builds**: Every push to the main branch triggers a build of the Docker image
+2. **Container Registry**: Images are automatically pushed to GitHub Container Registry (ghcr.io)
+3. **Versioned Tags**: Images are tagged with branch name, commit SHA, and 'latest' for the default branch
+
+To use the GitHub Actions workflow:
+
+1. Fork or clone this repository
+2. Go to your repository settings → Secrets and variables → Actions
+3. No secrets needed as GITHUB_TOKEN is automatically provided by GitHub
+
+The workflow file is located at `.github/workflows/docker-build.yml`
