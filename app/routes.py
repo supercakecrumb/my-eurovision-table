@@ -86,11 +86,39 @@ def configure_routes(app):
                 grades[country_id] = grade.value
 
         # Fetch sum of grades for each country in this stage from all users
-        rankings = db.session.query(
-            Country.id,
-            db.func.sum(Grade.value).label('total_grade')
-        ).join(Grade).filter(Grade.stage_id == stage_id).group_by(Country.id).order_by(
-            db.func.sum(Grade.value).desc()).all()
+        # But only count the latest grade from each user for each country
+        rankings = []
+        
+        # Get all countries in this stage
+        countries_in_stage = Country.query.join(Stage.countries).filter(Stage.id == stage_id).all()
+        
+        for country in countries_in_stage:
+            total_grade = 0
+            
+            # Get all users
+            all_users = User.query.all()
+            
+            for user in all_users:
+                # Get the latest grade from this user for this country
+                latest_grade = db.session.query(
+                    Grade
+                ).filter_by(
+                    user_id=user.id,
+                    stage_id=stage_id,
+                    country_id=country.id
+                ).order_by(
+                    Grade.timestamp.desc()
+                ).first()
+                
+                if latest_grade:
+                    total_grade += latest_grade.value
+            
+            if total_grade > 0:
+                rankings.append((country.id, total_grade))
+        
+        # Sort rankings by total grade (highest first)
+        rankings.sort(key=lambda x: x[1], reverse=True)
+
 
         # Create a dictionary of country_id to total_grade for sorting
         country_scores = {country_id: total_grade for country_id, total_grade in rankings}
@@ -107,14 +135,32 @@ def configure_routes(app):
         )
 
         ranking_items = [(Country.query.get(country_id), total_grade) for country_id, total_grade in rankings]
+
         
         # Get all users for the users tab
         users = User.query.all()
         
-        # Count votes per user for this stage
+        # Count votes per user for this stage - using a simpler approach
         user_votes = {}
         for user in users:
-            vote_count = Grade.query.filter_by(user_id=user.id, stage_id=stage_id).count()
+            # Get all countries in this stage
+            countries_in_this_stage = Country.query.join(Stage.countries).filter(Stage.id == stage_id).all()
+            country_ids = [country.id for country in countries_in_this_stage]
+            
+            # Count how many of these countries the user has voted for
+            vote_count = 0
+            for country_id in country_ids:
+                # Check if user has voted for this country
+                has_vote = Grade.query.filter_by(
+                    user_id=user.id,
+                    stage_id=stage_id,
+                    country_id=country_id
+                ).first() is not None
+                
+                if has_vote:
+                    vote_count += 1
+            
+            print(f"User {user.username} has {vote_count} votes in stage {stage_id}")
             user_votes[user.id] = vote_count
         
         # Find favorite country for each user (highest grade)
@@ -363,12 +409,39 @@ def configure_routes(app):
         
         # Handle AJAX requests
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            # Get updated rankings for this stage
-            rankings = db.session.query(
-                Country.id,
-                db.func.sum(Grade.value).label('total_grade')
-            ).join(Grade).filter(Grade.stage_id == stage_id).group_by(Country.id).order_by(
-                db.func.sum(Grade.value).desc()).all()
+            # Get updated rankings for this stage using the same logic as in the stage route
+            rankings = []
+            
+            # Get all countries in this stage
+            countries_in_stage = Country.query.join(Stage.countries).filter(Stage.id == stage_id).all()
+            
+            for country in countries_in_stage:
+                total_grade = 0
+                
+                # Get all users
+                all_users = User.query.all()
+                
+                for user in all_users:
+                    # Get the latest grade from this user for this country
+                    latest_grade = db.session.query(
+                        Grade
+                    ).filter_by(
+                        user_id=user.id,
+                        stage_id=stage_id,
+                        country_id=country.id
+                    ).order_by(
+                        Grade.timestamp.desc()
+                    ).first()
+                    
+                    if latest_grade:
+                        total_grade += latest_grade.value
+                
+                if total_grade > 0:
+                    rankings.append((country.id, total_grade))
+            
+            # Sort rankings by total grade (highest first)
+            rankings.sort(key=lambda x: x[1], reverse=True)
+
             
             # Format rankings for JSON response
             rankings_data = [{'country_id': country_id, 'total_grade': total_grade}
