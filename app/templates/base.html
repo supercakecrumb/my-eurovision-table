@@ -97,8 +97,14 @@
             color: #bb86fc;
         }
 
+        /* Make all outline-light buttons white in both themes */
+        .btn-outline-light {
+            color: white !important;
+            border-color: rgba(255, 255, 255, 0.5) !important;
+        }
+        
         .dark-theme .btn-outline-light {
-            color: #e0e0e0;
+            color: #e0e0e0 !important;
             border-color: #e0e0e0 !important;
         }
 
@@ -227,17 +233,17 @@
             <div class="d-flex align-items-center">
                 {% if session.user_id %}
                     <span class="text-light me-3 d-none d-md-inline">Hello, {{ session.username }}!</span>
-                    <a href="{{ url_for('fill_db') }}" class="btn btn-outline-eurovision me-2" style="color: var(--eurovision-blue);">
+                    <a href="{{ url_for('fill_db') }}" class="btn btn-outline-light me-2" style="color: white;">
                         <i class="fas fa-database me-1"></i> <span class="btn-text">Fill DB</span>
                     </a>
-                    <a href="/logout" class="btn btn-outline-eurovision me-2" style="color: var(--eurovision-blue);">
+                    <a href="/logout" class="btn btn-outline-light me-2" style="color: white;">
                         <i class="fas fa-sign-out-alt me-1"></i> <span class="btn-text">Logout</span>
                     </a>
                     <button id="theme-toggle" class="btn btn-outline-light">
                         <i id="theme-icon" class="fas fa-moon me-1"></i> <span class="btn-text">Theme</span>
                     </button>
                 {% else %}
-                    <a href="/" class="btn btn-outline-eurovision">
+                    <a href="/" class="btn btn-outline-light" style="color: white;">
                         <i class="fas fa-sign-in-alt me-1"></i> <span class="btn-text">Login</span>
                     </a>
                 {% endif %}
