@@ -25,10 +25,10 @@
                 <p>Paste CSV data to fill the database with Eurovision contestants.</p>
                 <p>The CSV data should have the following format:</p>
                 <pre class="bg-light p-3 rounded">
-country,artist,song
-Sweden,Loreen,Tattoo
-Finland,Käärijä,Cha Cha Cha
-Israel,Noa Kirel,Unicorn
+position,country,artist,song
+1,Sweden,Loreen,Tattoo
+2,Finland,Käärijä,Cha Cha Cha
+3,Israel,Noa Kirel,Unicorn
 ...</pre>
                 <div class="alert alert-info">
                     <i class="fas fa-lightbulb me-2"></i> Make sure your CSV data has the correct headers and format.
@@ -61,8 +61,8 @@ Israel,Noa Kirel,Unicorn
                     
                     <div class="mb-3">
                         <label for="csv_data" class="form-label fw-bold">CSV Data</label>
-                        <textarea name="csv_data" id="csv_data" class="form-control" rows="10" required placeholder="country,artist,song&#10;Sweden,Loreen,Tattoo&#10;Finland,Käärijä,Cha Cha Cha&#10;..."></textarea>
-                        <div class="form-text">Paste CSV data with country, artist, and song information.</div>
+                        <textarea name="csv_data" id="csv_data" class="form-control" rows="10" required placeholder="position,country,artist,song&#10;1,Sweden,Loreen,Tattoo&#10;2,Finland,Käärijä,Cha Cha Cha&#10;..."></textarea>
+                        <div class="form-text">Paste CSV data with position, country, artist, and song information.</div>
                     </div>
                     
                     <div class="mb-3">
@@ -97,6 +97,7 @@ Israel,Noa Kirel,Unicorn
                     <table class="table align-middle" id="preview-table">
                         <thead>
                             <tr>
+                                <th>Position</th>
                                 <th>Country</th>
                                 <th>Flag</th>
                                 <th>Artist</th>
@@ -106,6 +107,7 @@ Israel,Noa Kirel,Unicorn
                         <tbody>
                             {% for row in preview_data %}
                             <tr>
+                                <td>{{ row.position }}</td>
                                 <td>{{ row.country }}</td>
                                 <td><span class="fs-4">{{ country_flags.get(row.country, "🇪🇺") }}</span></td>
                                 <td>{{ row.artist }}</td>
@@ -202,17 +204,17 @@ Israel,Noa Kirel,Unicorn
 
 <script>
     // Sample CSV data
-    const sampleCsvData = `country,artist,song
-Sweden,Loreen,Tattoo
-Finland,Käärijä,Cha Cha Cha
-Israel,Noa Kirel,Unicorn
-Italy,Marco Mengoni,Due Vite
-France,La Zarra,Évidemment
-Spain,Blanca Paloma,Eaea
-Ukraine,TVORCHI,Heart of Steel
-United Kingdom,Mae Muller,I Wrote A Song
-Norway,Alessandra,Queen of Kings
-Germany,Lord of the Lost,Blood & Glitter`;
+    const sampleCsvData = `position,country,artist,song
+1,Sweden,Loreen,Tattoo
+2,Finland,Käärijä,Cha Cha Cha
+3,Israel,Noa Kirel,Unicorn
+4,Italy,Marco Mengoni,Due Vite
+5,France,La Zarra,Évidemment
+6,Spain,Blanca Paloma,Eaea
+7,Ukraine,TVORCHI,Heart of Steel
+8,United Kingdom,Mae Muller,I Wrote A Song
+9,Norway,Alessandra,Queen of Kings
+10,Germany,Lord of the Lost,Blood & Glitter`;
 
     // Copy sample CSV data to clipboard
     document.addEventListener('DOMContentLoaded', function() {

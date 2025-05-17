@@ -1,6 +1,6 @@
 import random
 import os
-from .models import db, Stage, Country
+from .models import db, Stage, Country, StageCountry
 
 # Check for environment variable to use real Eurovision data
 # Set USE_REAL_EUROVISION_DATA=1 to use real data from previous contests
@@ -120,25 +120,30 @@ def add_countries():
 
 def assign_countries_to_stages():
     """Assign countries to stages - uses real Eurovision data if enabled"""
+    # Clear existing assignments
+    StageCountry.query.delete()
+    db.session.commit()
+    
     if USE_REAL_DATA:
-        # Clear existing assignments
-        stages = Stage.query.all()
-        for stage in stages:
-            stage.countries = []
-        db.session.commit()
-        
         # Assign countries according to real Eurovision 2023 data
         for stage_name, entries in EUROVISION_2023_DATA.items():
             stage = Stage.query.filter_by(display_name=stage_name).first()
             if not stage:
                 continue
                 
-            for entry in entries:
+            # Add countries with their performance order
+            for order, entry in enumerate(entries, 1):
                 country = Country.query.filter_by(display_name=entry['country']).first()
-                if country and country not in stage.countries:
-                    stage.countries.append(country)
+                if country:
+                    # Create association with order
+                    stage_country = StageCountry(
+                        stage_id=stage.id,
+                        country_id=country.id,
+                        order=order
+                    )
+                    db.session.add(stage_country)
         
-        print(f"✅ Assigned countries to stages using real Eurovision 2023 data")
+        print(f"✅ Assigned countries to stages with order using real Eurovision 2023 data")
     else:
         # Use random assignment for dummy data
         stages = Stage.query.all()
@@ -147,9 +152,18 @@ def assign_countries_to_stages():
             # Assign each country to 1 or 2 stages randomly
             assigned_stages = random.sample(stages, k=random.randint(1, 2))
             for stage in assigned_stages:
-                if country not in stage.countries:
-                    stage.countries.append(country)
-        print(f"✅ Randomly assigned countries to stages")
+                # Get the next available order number for this stage
+                max_order = db.session.query(db.func.max(StageCountry.order)).filter_by(stage_id=stage.id).scalar() or 0
+                
+                # Create association with order
+                stage_country = StageCountry(
+                    stage_id=stage.id,
+                    country_id=country.id,
+                    order=max_order + 1
+                )
+                db.session.add(stage_country)
+        
+        print(f"✅ Randomly assigned countries to stages with order")
     
     db.session.commit()
 
@@ -177,3 +191,7 @@ def initialize_database():
     print("\n✅ Database setup complete!")
     print(f"✅ Added {stages_count} stages")
     print(f"✅ Added {countries_count} countries")
+    
+    # Count stage-country associations
+    associations_count = StageCountry.query.count()
+    print(f"✅ Created {associations_count} stage-country associations with order")

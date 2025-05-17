@@ -3,10 +3,15 @@ from datetime import datetime
 
 db = SQLAlchemy()
 
-association_table = db.Table('association',
-    db.Column('stage_id', db.Integer, db.ForeignKey('stage.id'), primary_key=True),
-    db.Column('country_id', db.Integer, db.ForeignKey('country.id'), primary_key=True)
-)
+class StageCountry(db.Model):
+    __tablename__ = 'stage_country'
+    stage_id = db.Column(db.Integer, db.ForeignKey('stage.id'), primary_key=True)
+    country_id = db.Column(db.Integer, db.ForeignKey('country.id'), primary_key=True)
+    order = db.Column(db.Integer, nullable=True)  # Performance order in the stage
+    
+    # Relationships
+    stage = db.relationship("Stage", back_populates="country_associations")
+    country = db.relationship("Country", back_populates="stage_associations")
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -19,7 +24,8 @@ class User(db.Model):
 class Stage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     display_name = db.Column(db.String(128), nullable=False)
-    countries = db.relationship('Country', secondary=association_table, back_populates='stages')
+    country_associations = db.relationship('StageCountry', back_populates='stage', cascade="all, delete-orphan")
+    countries = db.relationship('Country', secondary='stage_country', viewonly=True)
     grades = db.relationship('Grade', backref='stage', lazy=True)
 
     def __repr__(self):
@@ -30,7 +36,8 @@ class Country(db.Model):
     display_name = db.Column(db.String(128), nullable=False)
     artist = db.Column(db.String(128), nullable=False)
     song = db.Column(db.String(128), nullable=False)
-    stages = db.relationship('Stage', secondary=association_table, back_populates='countries')
+    stage_associations = db.relationship('StageCountry', back_populates='country', cascade="all, delete-orphan")
+    stages = db.relationship('Stage', secondary='stage_country', viewonly=True)
     grades = db.relationship('Grade', backref='country', lazy=True)
 
     def __repr__(self):

@@ -42,6 +42,7 @@
                     <table class="table align-middle" id="voting-table">
                         <thead>
                             <tr class="text-center">
+                                <th style="width: 50px;" class="order-col">Order</th>
                                 <th style="width: 120px;" class="country-col">Country</th>
                                 <th class="artist-col">Artist</th>
                                 <th class="song-col">Song</th>
@@ -53,6 +54,22 @@
                             {% for country in countries %}
                             <tr>
                                 <form id="form-{{ country.id }}" method="POST" action="{{ url_for('submit_grades', stage_id=stage.id, country_id=country.id) }}">
+                                    <td class="text-center order-col">
+                                        {% for sc in country.stage_associations %}
+                                            {% if sc.stage_id == stage.id %}
+                                                <div class="d-flex align-items-center justify-content-center">
+                                                    <input type="number"
+                                                           class="form-control form-control-sm order-input text-center"
+                                                           min="1"
+                                                           value="{{ sc.order or '' }}"
+                                                           placeholder="?"
+                                                           style="width: 60px;"
+                                                           data-country-id="{{ country.id }}"
+                                                           data-original-value="{{ sc.order or '' }}">
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
                                     <td class="fw-bold country-col">
                                         <div class="d-flex align-items-center">
                                             <span class="me-1 fs-4">{{ country_flags.get(country.display_name, "🇪🇺") }}</span>
@@ -168,6 +185,10 @@
             /* Mobile optimizations */
             @media (max-width: 768px) {
                 /* Optimize table columns for mobile */
+                .order-col {
+                    width: 40px !important;
+                }
+                
                 .country-col {
                     width: 90px !important;
                 }
@@ -254,7 +275,9 @@
             // Auto-submit form when grade input changes
             document.addEventListener('DOMContentLoaded', function() {
                 const gradeInputs = document.querySelectorAll('.grade-input');
+                const orderInputs = document.querySelectorAll('.order-input');
                 
+                // Handle grade inputs
                 gradeInputs.forEach(input => {
                     input.addEventListener('change', function() {
                         const countryId = this.dataset.countryId;
@@ -289,6 +312,91 @@
                             console.error('Error:', error);
                             statusElement.innerHTML = '<i class="fas fa-exclamation-circle text-danger"></i>';
                         });
+                    });
+                });
+                
+                // Handle order inputs
+                orderInputs.forEach(input => {
+                    input.addEventListener('change', function() {
+                        const countryId = this.dataset.countryId;
+                        const originalValue = this.dataset.originalValue;
+                        const newValue = this.value;
+                        
+                        // Only update if value has changed
+                        if (newValue !== originalValue && newValue !== '') {
+                            // Show loading indicator next to the input
+                            const parent = this.parentElement;
+                            const loadingIndicator = document.createElement('span');
+                            loadingIndicator.innerHTML = '<i class="fas fa-spinner fa-spin text-primary ms-2"></i>';
+                            loadingIndicator.className = 'order-status';
+                            parent.appendChild(loadingIndicator);
+                            
+                            // Submit order update using fetch API
+                            const formData = new FormData();
+                            formData.append('order', newValue);
+                            
+                            fetch(`/stage/{{ stage.id }}/update_order/${countryId}`, {
+                                method: 'POST',
+                                body: formData,
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                }
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                // Remove loading indicator
+                                parent.removeChild(loadingIndicator);
+                                
+                                if (data.success) {
+                                    // Update the original value
+                                    this.dataset.originalValue = newValue;
+                                    
+                                    // Show success indicator
+                                    const successIndicator = document.createElement('span');
+                                    successIndicator.innerHTML = '<i class="fas fa-check-circle text-success ms-2"></i>';
+                                    successIndicator.className = 'order-status';
+                                    parent.appendChild(successIndicator);
+                                    
+                                    // Remove success indicator after 2 seconds
+                                    setTimeout(() => {
+                                        parent.removeChild(successIndicator);
+                                    }, 2000);
+                                } else {
+                                    // Show error indicator
+                                    const errorIndicator = document.createElement('span');
+                                    errorIndicator.innerHTML = '<i class="fas fa-exclamation-circle text-danger ms-2"></i>';
+                                    errorIndicator.className = 'order-status';
+                                    parent.appendChild(errorIndicator);
+                                    
+                                    // Remove error indicator after 2 seconds
+                                    setTimeout(() => {
+                                        parent.removeChild(errorIndicator);
+                                    }, 2000);
+                                    
+                                    // Reset to original value
+                                    this.value = originalValue;
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                // Remove loading indicator
+                                parent.removeChild(loadingIndicator);
+                                
+                                // Show error indicator
+                                const errorIndicator = document.createElement('span');
+                                errorIndicator.innerHTML = '<i class="fas fa-exclamation-circle text-danger ms-2"></i>';
+                                errorIndicator.className = 'order-status';
+                                parent.appendChild(errorIndicator);
+                                
+                                // Remove error indicator after 2 seconds
+                                setTimeout(() => {
+                                    parent.removeChild(errorIndicator);
+                                }, 2000);
+                                
+                                // Reset to original value
+                                this.value = originalValue;
+                            });
+                        }
                     });
                 });
                 

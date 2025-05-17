@@ -1,5 +1,5 @@
 from flask import render_template, request, redirect, session, url_for, flash, jsonify, json
-from .models import db, User, Stage, Country, Grade
+from .models import db, User, Stage, Country, Grade, StageCountry
 from .forms import LoginForm, GradeForm
 from .country_flags import country_flags, get_flag_emoji
 from datetime import datetime
@@ -84,12 +84,12 @@ def configure_routes(app):
             if g:
                 grades[country_id] = g.value
 
-        # Fetch countries for this stage, ordered by ID
+        # Fetch countries for this stage, ordered by performance order
         countries = (
             Country.query
-            .join(Stage.countries)
-            .filter(Stage.id == stage_id)
-            .order_by(Country.id)
+            .join(StageCountry, Country.id == StageCountry.country_id)
+            .filter(StageCountry.stage_id == stage_id)
+            .order_by(StageCountry.order)
             .all()
         )
 
@@ -117,6 +117,35 @@ def configure_routes(app):
             if fav:
                 user_favorites[u.id] = Country.query.get(fav.country_id)
 
+        # Calculate rankings for this stage (sorted by total score)
+        rankings = []
+        for country in countries:
+            total_grade = 0
+            
+            # Get all users
+            all_users = User.query.all()
+            
+            for u in all_users:
+                # Get the latest grade from this user for this country
+                latest_grade = db.session.query(
+                    Grade
+                ).filter_by(
+                    user_id=u.id,
+                    stage_id=stage_id,
+                    country_id=country.id
+                ).order_by(
+                    Grade.timestamp.desc()
+                ).first()
+                
+                if latest_grade:
+                    total_grade += latest_grade.value
+            
+            if total_grade > 0:
+                rankings.append((country, total_grade))
+        
+        # Sort rankings by total grade (highest first)
+        ranking_items = sorted(rankings, key=lambda x: x[1], reverse=True)
+        
         return render_template('stage.html',
                             stage=stage,
                             countries=countries,
@@ -124,7 +153,8 @@ def configure_routes(app):
                             users=users,
                             user_votes=user_votes,
                             user_favorites=user_favorites,
-                            country_flags=country_flags)
+                            country_flags=country_flags,
+                            ranking_items=ranking_items)
 
   
     @app.route('/fill-db', methods=['GET', 'POST'])
@@ -182,7 +212,7 @@ def configure_routes(app):
                 csv_data = list(csv.DictReader(stream))
                 
                 # Validate CSV structure
-                required_fields = ['country', 'artist', 'song']
+                required_fields = ['position', 'country', 'artist', 'song']
                 for field in required_fields:
                     if not all(field in row for row in csv_data):
                         flash(f"CSV is missing required field: {field}", "danger")
@@ -256,11 +286,11 @@ def configure_routes(app):
             # Clear existing countries if requested
             if clear_existing:
                 # Get all countries in this stage
-                countries = Country.query.join(Stage.countries).filter(Stage.id == stage.id).all()
+                stage_countries = StageCountry.query.filter_by(stage_id=stage.id).all()
                 
                 # Remove countries from stage
-                for country in countries:
-                    stage.countries.remove(country)
+                for sc in stage_countries:
+                    db.session.delete(sc)
                     
                 db.session.commit()
                 flash(f"Cleared existing countries from {stage_name}", "info")
@@ -271,6 +301,14 @@ def configure_routes(app):
                 country_name = row['country'].strip()
                 artist = row['artist'].strip()
                 song = row['song'].strip()
+                
+                # Get position from CSV (or use index+1 if not provided or invalid)
+                try:
+                    position = int(row['position'].strip())
+                    if position < 1:
+                        position = countries_added + 1
+                except (ValueError, KeyError):
+                    position = countries_added + 1
                 
                 # Check if country already exists
                 country = Country.query.filter_by(display_name=country_name).first()
@@ -285,9 +323,23 @@ def configure_routes(app):
                     country.song = song
                 
                 # Add country to stage if not already there
-                if country not in stage.countries:
-                    stage.countries.append(country)
+                existing_stage_country = StageCountry.query.filter_by(
+                    stage_id=stage.id,
+                    country_id=country.id
+                ).first()
+                
+                if not existing_stage_country:
+                    # Create new association with order from CSV
+                    new_stage_country = StageCountry(
+                        stage_id=stage.id,
+                        country_id=country.id,
+                        order=position
+                    )
+                    db.session.add(new_stage_country)
                     countries_added += 1
+                else:
+                    # Update existing association with new order
+                    existing_stage_country.order = position
             
             db.session.commit()
             flash(f"Successfully added {countries_added} countries to {stage_name}", "success")
@@ -351,7 +403,7 @@ def configure_routes(app):
             rankings = []
             
             # Get all countries in this stage
-            countries_in_stage = Country.query.join(Stage.countries).filter(Stage.id == stage_id).all()
+            countries_in_stage = Country.query.join(StageCountry).filter(StageCountry.stage_id == stage_id).all()
             
             for country in countries_in_stage:
                 total_grade = 0
@@ -449,3 +501,60 @@ def configure_routes(app):
                               stage=stage,
                               user_grades=user_grades,
                               country_flags=country_flags)
+                              
+    @app.route('/stage/<int:stage_id>/update_order/<int:country_id>', methods=['POST'])
+    def update_country_order(stage_id, country_id):
+        if 'user_id' not in session:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': "Please log in to update order"})
+            flash("Please log in to update order", "warning")
+            return redirect(url_for('index'))
+
+        user_id = session['user_id']
+        
+        # Verify user exists in database
+        user = User.query.get(user_id)
+        if not user:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': "User not found. Please log in again."})
+            flash("User not found. Please log in again.", "danger")
+            session.pop('user_id', None)
+            session.pop('username', None)
+            return redirect(url_for('index'))
+            
+        # Get the new order value
+        try:
+            new_order = int(request.form.get('order'))
+            if new_order < 1:
+                raise ValueError("Order must be a positive number")
+        except (ValueError, TypeError):
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': "Invalid order value"})
+            flash("Invalid order value", "danger")
+            return redirect(url_for('stage', stage_id=stage_id))
+            
+        # Find the stage-country association
+        stage_country = StageCountry.query.filter_by(
+            stage_id=stage_id,
+            country_id=country_id
+        ).first()
+        
+        if not stage_country:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': "Country not found in this stage"})
+            flash("Country not found in this stage", "danger")
+            return redirect(url_for('stage', stage_id=stage_id))
+            
+        # Update the order
+        stage_country.order = new_order
+        db.session.commit()
+        
+        # Handle AJAX requests
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({
+                'success': True,
+                'message': "Order updated successfully"
+            })
+            
+        flash("Order updated successfully", "success")
+        return redirect(url_for('stage', stage_id=stage_id))
